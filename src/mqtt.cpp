@@ -9,6 +9,7 @@ static std::unordered_map<std::string_view, mqtt::Topic::Callback> callbacks{};
 static WiFiClient wifiClient{};
 static PubSubClient client{wifiClient};
 static Preferences prefs{};
+static auto clientID = "esp32-mqtt-client";
 static String host{};
 static std::function<void()> onConnect{};
 
@@ -25,6 +26,15 @@ void mqtt::setup() {
     host = prefs.getString("host", "");
     client.setServer(host.c_str(), 1883);
     client.setCallback(mainCallback);
+}
+
+/*!
+ * @brief Sets the MQTT client ID
+ * @param id the MQTT client ID
+ */
+void mqtt::setClientID(const char *id) {
+    clientID = id;
+    log_i("MQTT client id set to %s", clientID);
 }
 
 /*!
@@ -95,7 +105,7 @@ bool mqtt::Topic::subscribe() const {
  * @return true if successful, false otherwise
  */
 bool mqtt::Topic::publish(const char *message) const {
-    const auto b = client.publish(topic, message);
+    const auto b = client.publish(topic, message, true);
     if (!b) {
         log_e("Failed to publish to topic '%s'", topic);
     } else {
@@ -108,8 +118,7 @@ bool mqtt::Topic::publish(const char *message) const {
 //! Callback for MQTT messages; calls registered callback for the topic
 static void mainCallback(const char *topic, uint8_t *payload, unsigned int length) {
     log_d("Received message on topic '%s': %.*s", topic, length, payload);
-    const auto it = callbacks.find(topic);
-    if (it != callbacks.end()) {
+    if (const auto it = callbacks.find(topic); it != callbacks.end()) {
         it->second(payload, length);
     } else {
         log_w("No callback registered for topic '%s'", topic);
@@ -129,7 +138,7 @@ static bool connect() {
     // wait until connected to MQTT server
     log_d("Connecting to MQTT server %s ...", host.c_str());
     // attempt to connect
-    if (client.connect(mqtt::CLIENT_ID)) {
+    if (client.connect(clientID)) {
         log_i("Connected to MQTT server %s", host.c_str());
         if (onConnect) onConnect();
     } else {
@@ -143,16 +152,16 @@ static bool connect() {
 static void logState() {
     switch (client.state()) {
         case MQTT_CONNECTION_TIMEOUT:
-            log_e("Connection timeout");
+            log_w("Connection timeout");
             break;
         case MQTT_CONNECTION_LOST:
-            log_e("Connection lost");
+            log_w("Connection lost");
             break;
         case MQTT_CONNECT_FAILED:
-            log_e("Connection failed");
+            log_w("Connection failed");
             break;
         case MQTT_DISCONNECTED:
-            log_e("Disconnected");
+            log_w("Disconnected");
             break;
         case MQTT_CONNECTED:
             log_i("Connected");

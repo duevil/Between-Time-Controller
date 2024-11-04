@@ -1,84 +1,92 @@
 #include "states.h"
-#include "puzzle_values.h"
-
+#include <ranges>
+#include <variant>
 
 using namespace states;
+using enum Type;
 
 
-Candles::Candles() : Candles::BaseType() {
-    *this += [](const ValueType &value) {
-        if (main == Main::INPUT_FIELD_SOLVED && value.all()) {
-            main = Main::CANDLES_SOLVED;
-        }
-    };
-}
+template<Type type>
+struct SV final : StateValue<type> {
+    using value_t = typename StateValue<type>::value_t;
+    ~SV() override = default;
+    void onChange(value_t &value) override;
+};
 
-inline Candles &Candles::operator=(const ValueType &value) {
-    BaseType::operator=(value);
-    return *this;
-}
-
-inline void Candles::setC1(bool val) { *this = static_cast<ValueType>(*this).set(0, val); }
-
-inline void Candles::setC2(bool val) { *this = static_cast<ValueType>(*this).set(1, val); }
-
-inline void Candles::setC3(bool val) { *this = static_cast<ValueType>(*this).set(2, val); }
-
-inline void Candles::setC4(bool val) { *this = static_cast<ValueType>(*this).set(3, val); }
+static auto stateValues = []<auto... types>(std::integer_sequence<Type, types...>) {
+    return std::unordered_map<Type, std::variant<SV<types>...>>{{types, SV<types>{}}...};
+}(std::integer_sequence<Type, MAIN, TIMECODE, CANDLES, MAZE_POSITION, SCANNED_ITEMS>{});
 
 
-MazePosition::MazePosition() : MazePosition::BaseType() {
-    *this += [](const ValueType &value) {
-        if (main == Main::MAZE_ACTIVE && value == puzzle_values::MAZE_END) {
-            main = Main::MAZE_SOLVED;
-        }
-    };
-}
+#pragma region Definitions
 
-inline MazePosition &MazePosition::operator=(const ValueType &value) {
-    BaseType::operator=(value);
-    return *this;
-}
 
-void MazePosition::move(maze::Direction direction) {
-    // TODO
+template<Type type>
+static SV<type> &get() { return get<SV<type>>(stateValues.at(type)); }
+
+
+bool MainValue::changeAllowed() const {
+    // TODO: change values to reflect the proper timecodes
+    auto timecode = get<TIMECODE>().get();
+    switch (value) {
+        case INPUT_FIELD_OPENED:
+        case INPUT_FIELD_SOLVED: return timecode == 0;
+        case CANDLES_SOLVED:
+        case BOOK_BINARY_SOLVED: return timecode == 1;
+        case MAZE_ACTIVE:
+        case MAZE_SOLVED: return timecode == 2;
+        case ARCADE_UNLOCKED:
+        case ALL_ITEMS_SCANNED: return timecode == 3;
+        default: return true;
+    }
 }
 
 
-ScannedItems::ScannedItems() : ScannedItems::BaseType() {
-    *this += [](const ValueType &value) {
-        if (main == Main::ARCADE_UNLOCKED && value.all()) {
-            main = Main::ALL_ITEMS_SCANNED;
-        }
-    };
+StateValue<MAIN> &states::mainState() { return get<MAIN>(); }
+StateValue<TIMECODE> &states::timecode() { return get<TIMECODE>(); }
+StateValue<CANDLES> &states::candles() { return get<CANDLES>(); }
+StateValue<MAZE_POSITION> &states::mazePosition() { return get<MAZE_POSITION>(); }
+StateValue<SCANNED_ITEMS> &states::scannedItems() { return get<SCANNED_ITEMS>(); }
+
+static ColorCallback colorCallback;
+void states::setColorCallback(ColorCallback callback) { colorCallback = std::move(callback); }
+
+
+#pragma endregion
+#pragma region Logic
+
+
+template<> void SV<MAIN>::onChange(value_t &value) {
+    // TODO: state handling
 }
 
-inline ScannedItems &ScannedItems::operator=(const ValueType &value) {
-    BaseType::operator=(value);
-    return *this;
+template<> void SV<TIMECODE>::onChange(value_t &value) {
+    // TODO: state handling
 }
 
-inline void ScannedItems::scanI1() { *this = get() | ValueType{1 << 0}; }
-
-inline void ScannedItems::scanI2() { *this = get() | ValueType{1 << 1}; }
-
-inline void ScannedItems::scanI3() { *this = get() | ValueType{1 << 2}; }
-
-inline void ScannedItems::scanI4() { *this = get() | ValueType{1 << 3}; }
-
-inline void ScannedItems::scanI5() { *this = get() | ValueType{1 << 4}; }
-
-inline void ScannedItems::scanI6() { *this = get() | ValueType{1 << 5}; }
-
-inline void ScannedItems::scanI7() { *this = get() | ValueType{1 << 6}; }
-
-inline void ScannedItems::scanI8() { *this = get() | ValueType{1 << 7}; }
-
-
-inline void states::resetAll() {
-    main = Main::IDLE;
-    timecode = 0;
-    candles = Candles::ValueType{};
-    mazePosition = maze::Position{0, 0};
-    scannedItems = ScannedItems::ValueType{};
+template<> void SV<CANDLES>::onChange(value_t &value) {
+    // TODO: state handling
 }
+
+template<> void SV<MAZE_POSITION>::onChange(value_t &value) {
+    // TODO: state handling
+}
+
+template<> void SV<SCANNED_ITEMS>::onChange(value_t &value) {
+    // TODO: state handling
+}
+
+
+void states::processInput(const ColorInput &input) {
+    // TODO: input processing and state updating chain
+    colorCallback(input.colors);
+}
+
+void states::reset() {
+    for (auto &svv : std::views::values(stateValues)) {
+        std::visit([](auto &sv) { sv = {}; }, svv);
+    }
+}
+
+
+#pragma endregion

@@ -2,21 +2,20 @@
 #define COLOR_HPP
 
 #include <string_view>
-#include <WString.h>
 
-template<typename T, class Base> requires std::is_same_v<T, Base> ||
-                                          std::is_arithmetic_v<T> ||
-                                          std::is_same_v<T, const char *> ||
-                                          std::is_same_v<T, String>
-constexpr inline bool is_color_value = true;
 
 struct Color {
-    const uint32_t value;
+    template<typename T, class Base> requires std::is_same_v<T, Base> ||
+                                              std::is_arithmetic_v<T> ||
+                                              std::is_same_v<T, const char*> ||
+                                              std::is_same_v<T, std::string_view>
+    static constexpr bool is_color_value = true;
+    uint32_t value;
     constexpr explicit(false) Color(auto value);
     [[nodiscard]] constexpr const char *toString() const;
     constexpr bool operator==(const Color &) const = default;
-
-    consteval explicit Color(int r, int g, int b) : value{static_cast<uint32_t>((r << 16) | (g << 8) | b)} {}
+    constexpr Color() : value(0) {}
+    consteval explicit Color(int r, int g, int b) : value{static_cast<uint32_t>(r << 16 | g << 8 | b)} {}
 
     static const Color RED;
     static const Color GREEN;
@@ -28,43 +27,34 @@ struct Color {
     static const Color BLACK;
 
 private:
-    template<typename T> requires is_color_value<T, Color>
+    template<typename T> requires Color::is_color_value<T, Color>
     static constexpr uint32_t toColorT(T value);
 };
 
 
-template<typename T> requires is_color_value<T, Color>
+// definitions:
+
+template<typename T> requires Color::is_color_value<T, Color>
 constexpr uint32_t Color::toColorT(T value) {
     constexpr auto fromString = [](const char *color) {
         auto str = std::string_view{color};
-        if (str == "red") return Color::RED;
-        if (str == "green") return Color::GREEN;
-        if (str == "blue") return Color::BLUE;
-        if (str == "yellow") return Color::YELLOW;
-        if (str == "cyan") return Color::CYAN;
-        if (str == "magenta") return Color::MAGENTA;
-        if (str == "white" || str == "on") return Color::WHITE;
-        return Color::BLACK;
+        if (str == "red") return RED;
+        if (str == "green") return GREEN;
+        if (str == "blue") return BLUE;
+        if (str == "yellow") return YELLOW;
+        if (str == "cyan") return CYAN;
+        if (str == "magenta") return MAGENTA;
+        if (str == "white" || str == "on") return WHITE;
+        return BLACK;
     };
     if constexpr (std::is_same_v<T, Color>) return value.value;
     if constexpr (std::is_arithmetic_v<T>) return static_cast<uint32_t>(value);
-    if constexpr (std::is_same_v<T, const char *>) return fromString(value).value;
-    if constexpr (std::is_same_v<T, String>) return fromString(value.c_str()).value;
+    if constexpr (std::is_same_v<T, const char*>) return fromString(value).value;
+    if constexpr (std::is_same_v<T, std::string_view>) return fromString(value.c_str()).value;
+    return 0;
 }
 
 constexpr Color::Color(auto value) : value{toColorT(value)} {}
-
-constexpr const char *Color::toString() const {
-    auto value = this->value;
-    if (value == RED.value) return "red";
-    if (value == GREEN.value) return "green";
-    if (value == BLUE.value) return "blue";
-    if (value == YELLOW.value) return "yellow";
-    if (value == CYAN.value) return "cyan";
-    if (value == MAGENTA.value) return "magenta";
-    if (value == WHITE.value) return "white";
-    return "black";
-}
 
 constexpr Color Color::RED = Color{255, 0, 0};
 constexpr Color Color::GREEN = Color{0, 255, 0};
@@ -74,5 +64,20 @@ constexpr Color Color::CYAN = Color{0, 255, 255};
 constexpr Color Color::MAGENTA = Color{255, 0, 255};
 constexpr Color Color::WHITE = Color{255, 255, 255};
 constexpr Color Color::BLACK = Color{0, 0, 0};
+
+constexpr const char *Color::toString() const {
+    switch (value) {
+        case RED.value: return "red";
+        case GREEN.value: return "green";
+        case BLUE.value: return "blue";
+        case YELLOW.value: return "yellow";
+        case CYAN.value: return "cyan";
+        case MAGENTA.value: return "magenta";
+        case WHITE.value: return "white";
+        case BLACK.value: return "black";
+        default: return "unknown";
+    }
+}
+
 
 #endif //COLOR_HPP

@@ -1,18 +1,15 @@
 #include "leds.h"
 #include <Adafruit_NeoPixel.h>
+#include <ColorInput.hpp>
 
 using namespace leds;
 
-static Adafruit_NeoPixel pixels = Adafruit_NeoPixel(MAX, PIN);
-
-template<std::size_t... I> static constexpr auto createArray(std::index_sequence<I...>) {
-    return Array{static_cast<N>(I)...};
-}
+static Adafruit_NeoPixel pixels{ColorInput::SIZE, PIN};
 
 
-Ref::Ref(N index) : Color(pixels.getPixelColor(std::to_underlying(index))), index(index) {}
+Ref::Ref(ColorInput::Position position) : Color(pixels.getPixelColor(position)), position(position) {}
 
-void Ref::set(Color color) const { leds::set(index, color); }
+void Ref::set(Color color) const { leds::set(position, color); }
 
 void Ref::off() const { set(0); }
 
@@ -27,24 +24,31 @@ void leds::setup() {
     off();
 }
 
-Array leds::get() { return createArray(std::make_index_sequence<MAX>{}); }
+Array leds::get() {
+    return []<auto... I>(std::index_sequence<I...>) {
+        return Array{static_cast<ColorInput::Position>(I)...};
+    }(std::make_index_sequence<ColorInput::SIZE>{});
+}
 
-Ref leds::get(N index) { return Ref{index}; }
+Ref leds::get(ColorInput::Position position) { return Ref{position}; }
 
-void leds::set(const Colors &colors) {
-    for (auto i = 0; i < MAX; ++i) {
-        pixels.setPixelColor(static_cast<int16_t>(i), colors[i].value);
+void leds::setAll(const ColorInput::Colors &colors) {
+    log_d("Setting all leds");
+    for (auto i : ColorInput::positions) {
+        log_d("Setting led at position [%d] to: %s", i, colors[i].toString());
+        pixels.setPixelColor(i, colors[i].value);
     }
     pixels.show();
 }
 
-void leds::set(N index, Color color) {
-    if (index == N::MAX) return;
-    pixels.setPixelColor(std::to_underlying(index), color.value);
+void leds::set(ColorInput::Position position, Color color) {
+    log_d("Setting led at position [%d] to: %s", position, color.toString());
+    pixels.setPixelColor(position, color.value);
     pixels.show();
 }
 
 void leds::off() {
+    log_d("Clearing all leds");
     pixels.clear();
     pixels.show();
 }

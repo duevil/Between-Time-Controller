@@ -1,76 +1,88 @@
 #ifndef STATES_H
 #define STATES_H
 
-#include "Observable.hpp"
-#include <bitset>
+#include "ColorInput.hpp"
 #include "maze.h"
+#include <functional>
+
 
 namespace states {
     enum class Type { MAIN, TIMECODE, CANDLES, MAZE_POSITION, SCANNED_ITEMS };
-    enum class Main : uint8_t {
-        IDLE = 0,
-        STARTED = 1,
-        INPUT_FIELD_OPENED = 2,
-        INPUT_FIELD_SOLVED = 3,
-        CANDLES_SOLVED = 4,
-        BOOK_BINARY_SOLVED = 5,
-        MAZE_ACTIVE = 6,
-        MAZE_SOLVED = 7,
-        ARCADE_UNLOCKED = 8,
-        ALL_ITEMS_SCANNED = 9,
-        GAME_WON = 10,
-        GAME_LOST = 11
+
+    struct MainValue {
+        enum Value : uint8_t {
+            IDLE               = 0,
+            STARTED            = 1,
+            INPUT_FIELD_OPENED = 2,
+            INPUT_FIELD_SOLVED = 3,
+            CANDLES_SOLVED     = 4,
+            BOOK_BINARY_SOLVED = 5,
+            MAZE_ACTIVE        = 6,
+            MAZE_SOLVED        = 7,
+            ARCADE_UNLOCKED    = 8,
+            ALL_ITEMS_SCANNED  = 9,
+            GAME_WON           = 10,
+            GAME_LOST          = 11
+        } value;
+
+        MainValue() : value(IDLE) {}
+        explicit(false) MainValue(auto v) : value(static_cast<Value>(v)) {}
+        [[nodiscard]] bool changeAllowed() const;
+        bool operator==(const MainValue &other) const { return value == other.value; }
+        explicit operator Value() const { return value; }
     };
 
-    template<Type TYPE, typename T>
-    struct StateValue : public Observable<T> {
-        using ValueType = T;
-        using BaseType = StateValue;
+    template<Type type>
+    using ValueType = std::conditional_t<
+        type == Type::MAIN, MainValue, std::conditional_t<
+            type == Type::TIMECODE, uint16_t, std::conditional_t<
+                type == Type::CANDLES, std::bitset<4>, std::conditional_t<
+                    type == Type::MAZE_POSITION, maze::Position, std::conditional_t<
+                        type == Type::SCANNED_ITEMS, std::bitset<8>, void>>>>>;
 
-        const Type type = TYPE;
-        ~StateValue() override = default;
+    template<Type type>
+    struct StateValue {
+        using value_t = ValueType<type>;
+        using Callback = std::function<void(value_t)>;
+        StateValue() = default;
+        virtual ~StateValue() = 0;
+        void setCallback(const Callback &callback) { this->callback = callback; }
+        const value_t &get() const { return this->value; }
 
-        StateValue &operator=(const T &value) override {
-            Observable<T>::operator=(value);
+        void set(const value_t &value) {
+            if (this->value != value) {
+                this->value = value;
+                callback(this->value);
+                onChange(this->value);
+            }
+        }
+
+        StateValue &operator=(value_t value) {
+            set(value);
             return *this;
         }
+
+    protected:
+        virtual void onChange(value_t &value) = 0;
+
+    private:
+        Callback callback{};
+        value_t value{};
     };
 
-    struct Candles : public StateValue<Type::CANDLES, std::bitset<4>> {
-        Candles();
-        Candles &operator=(const ValueType &value) override;
-        void setC1(bool val);
-        void setC2(bool val);
-        void setC3(bool val);
-        void setC4(bool val);
-    };
+    template<Type type> StateValue<type>::~StateValue() = default;
 
-    struct MazePosition : public StateValue<Type::MAZE_POSITION, maze::Position> {
-        MazePosition();
-        MazePosition &operator=(const ValueType &value) override;
-        void move(maze::Direction direction);
-    };
+    StateValue<Type::MAIN> &mainState();
+    StateValue<Type::TIMECODE> &timecode();
+    StateValue<Type::CANDLES> &candles();
+    StateValue<Type::MAZE_POSITION> &mazePosition();
+    StateValue<Type::SCANNED_ITEMS> &scannedItems();
 
-    struct ScannedItems : public StateValue<Type::SCANNED_ITEMS, std::bitset<8>> {
-        ScannedItems();
-        ScannedItems &operator=(const ValueType &value) override;
-        void scanI1();
-        void scanI2();
-        void scanI3();
-        void scanI4();
-        void scanI5();
-        void scanI6();
-        void scanI7();
-        void scanI8();
-    };
-
-    inline StateValue<Type::MAIN, Main> main{};
-    inline StateValue<Type::TIMECODE, uint16_t> timecode{};
-    inline Candles candles{};
-    inline MazePosition mazePosition{};
-    inline ScannedItems scannedItems{};
-
-    void resetAll();
+    using ColorCallback = std::function<void(const ColorInput::Colors &)>;
+    void setColorCallback(ColorCallback callback);
+    void processInput(const ColorInput &input);
+    void reset();
 }
+
 
 #endif //STATES_H
