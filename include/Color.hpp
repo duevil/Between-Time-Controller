@@ -10,12 +10,12 @@ struct Color {
                                               std::is_same_v<T, const char*> ||
                                               std::is_same_v<T, std::string_view>
     static constexpr bool is_color_value = true;
-    uint32_t value;
+    long unsigned int value;
     constexpr explicit(false) Color(auto value);
     [[nodiscard]] constexpr const char *toString() const;
     constexpr bool operator==(const Color &) const = default;
     constexpr Color() : value(0) {}
-    consteval explicit Color(int r, int g, int b) : value{static_cast<uint32_t>(r << 16 | g << 8 | b)} {}
+    consteval explicit Color(int r, int g, int b) : value{static_cast<long unsigned int>(r << 16 | g << 8 | b)} {}
 
     static const Color RED;
     static const Color GREEN;
@@ -48,7 +48,7 @@ constexpr uint32_t Color::toColorT(T value) {
         return BLACK;
     };
     if constexpr (std::is_same_v<T, Color>) return value.value;
-    if constexpr (std::is_arithmetic_v<T>) return static_cast<uint32_t>(value);
+    if constexpr (std::is_arithmetic_v<T>) return static_cast<long unsigned int>(value);
     if constexpr (std::is_same_v<T, const char*>) return fromString(value).value;
     if constexpr (std::is_same_v<T, std::string_view>) return fromString(value.c_str()).value;
     return 0;

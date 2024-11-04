@@ -4,8 +4,8 @@
 #include "timecode_display.h"
 #include "secrets.h"
 #include <WiFi.h>
-
 #include "states.h"
+#include "encoder.h"
 
 #ifdef WOKWI
 //! @brief Client ID
@@ -90,10 +90,27 @@ void setup() {
     states::setColorCallback(leds::setAll);
     using enum states::Type;
     states::mainState().setCallback([](auto value) { publishValue<MAIN>(topicMain, value); });
-    states::timecode().setCallback([](auto value) { publishValue<TIMECODE>(topicTimecode, value); });
+    states::timecode().setCallback([](auto value) {
+        publishValue<TIMECODE>(topicTimecode, value);
+        encoder::set(value);
+    });
     states::candles().setCallback([](auto value) { publishValue<CANDLES>(topicCandles, value); });
     states::mazePosition().setCallback([](auto value) { publishValue<MAZE_POSITION>(topicMazePosition, value); });
     states::scannedItems().setCallback([](auto value) { publishValue<SCANNED_ITEMS>(topicScannedItems, value); });
+
+    encoder::setup();
+    encoder::setCallback([](encoder::Event e) {
+        if (e == encoder::Event::PRESS) {
+            timecode_display::toggleBlinking(!timecode_display::isBlinking());
+        } else if(timecode_display::isBlinking()) {
+            auto value = static_cast<uint16_t>(abs(encoder::get()));
+            // FIXME: crash caused by stack overflow due to calling publish in FreeRTOS timer task
+            //states::timecode() = value;
+            timecode_display::set(value);
+        } else {
+            encoder::set(states::timecode().get());
+        }
+    });
 }
 
 void loop() {

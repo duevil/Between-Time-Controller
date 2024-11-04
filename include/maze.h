@@ -1,18 +1,16 @@
 #ifndef MAZE_H
 #define MAZE_H
 
-#include <cstdint>
-
 
 namespace maze {
     enum class Direction { NORTH, EAST, SOUTH, WEST };
 
     struct Position {
-        uint8_t x;
-        uint8_t y;
+        unsigned char x;
+        unsigned char y;
 
         constexpr Position() : x(0), y(0) {}
-        constexpr Position(uint8_t x, uint8_t y) : x(x), y(y) {}
+        constexpr Position(auto x, auto y) : x(x), y(y) {}
         constexpr explicit Position(auto p) : x(p >> 0 & 0xF0), y(p >> 4 & 0x0F) {}
 
         [[nodiscard]] auto toInt() const { return y << 4 | x << 0; }
@@ -20,10 +18,10 @@ namespace maze {
         friend Position operator+(const Position &position, Direction direction) {
             using enum Direction;
             switch (direction) {
-                case NORTH: return {position.x, static_cast<uint8_t>(position.y - 1)};
-                case EAST: return {static_cast<uint8_t>(position.x + 1), position.y};
-                case SOUTH: return {position.x, static_cast<uint8_t>(position.y + 1)};
-                case WEST: return {static_cast<uint8_t>(position.x - 1), position.y};
+                case NORTH: return {position.x, static_cast<unsigned char>(position.y - 1)};
+                case EAST: return {static_cast<unsigned char>(position.x + 1), position.y};
+                case SOUTH: return {position.x, static_cast<unsigned char>(position.y + 1)};
+                case WEST: return {static_cast<unsigned char>(position.x - 1), position.y};
                 default: return {0, 0};
             }
         }

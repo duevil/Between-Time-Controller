@@ -1,8 +1,8 @@
 #ifndef STATES_H
 #define STATES_H
 
-#include "ColorInput.hpp"
 #include "maze.h"
+#include "ColorInput.hpp"
 #include <functional>
 
 
