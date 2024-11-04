@@ -19,6 +19,7 @@ static uint16_t lastTimecode;
 
 
 void timecode_display::setup() {
+    log_d("Timecode display setup");
     eventGroup = xEventGroupCreateStatic(&eventGroupBuffer);
     xTaskCreateStatic(blinkLoop,
                       "BlinkLoop",

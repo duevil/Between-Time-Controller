@@ -5,8 +5,13 @@
 
 
 namespace timecode_display {
-    constexpr uint8_t PIN_CLK = GPIO_NUM_16;
-    constexpr uint8_t PIN_DIO = GPIO_NUM_17;
+#ifdef WOKWI
+    constexpr inline auto PIN_CLK = GPIO_NUM_16;
+    constexpr inline auto PIN_DIO = GPIO_NUM_17;
+#else
+    constexpr inline auto PIN_CLK = GPIO_NUM_12;
+    constexpr inline auto PIN_DIO = GPIO_NUM_14;
+#endif
 
     void setup();
     void set(uint16_t timecode);

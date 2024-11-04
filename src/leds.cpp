@@ -20,6 +20,7 @@ Ref &Ref::operator=(Color color) {
 
 
 void leds::setup() {
+    log_d("LEDs setup");
     pixels.begin();
     off();
 }

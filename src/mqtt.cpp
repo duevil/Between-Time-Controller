@@ -22,6 +22,7 @@ static void logState();
  * @brief Loads the MQTT server host from non-volatile storage and initializes the MQTT client
  */
 void mqtt::setup() {
+    log_d("MQTT setup");
     prefs.begin("mqtt", false);
     host = prefs.getString("host", "");
     client.setServer(host.c_str(), 1883);

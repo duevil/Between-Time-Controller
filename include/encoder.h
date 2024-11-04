@@ -6,9 +6,15 @@
 
 
 namespace encoder {
-    constexpr auto PIN_CLK = GPIO_NUM_14;
-    constexpr auto PIN_DT = GPIO_NUM_12;
-    constexpr auto PIN_SW = GPIO_NUM_13;
+#ifdef WOKWI
+    constexpr inline auto PIN_CLK = GPIO_NUM_14;
+    constexpr inline auto PIN_DT = GPIO_NUM_12;
+    constexpr inline auto PIN_SW = GPIO_NUM_13;
+#else
+    constexpr inline auto PIN_CLK = GPIO_NUM_39;
+    constexpr inline auto PIN_DT = GPIO_NUM_34;
+    constexpr inline auto PIN_SW = GPIO_NUM_35;
+#endif
 
     enum class Event { ROTATE_CCW, ROTATE_CW, PRESS, };
 

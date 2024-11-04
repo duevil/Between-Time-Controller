@@ -9,6 +9,7 @@ static Callback changeCallback{};
 
 
 void input::setup() {
+    log_d("Input setup");
     for (auto i : ColorInput::positions) {
         bounces[i] = Bounce{};
         bounces[i].attach(PINS(i), INPUT_PULLUP);

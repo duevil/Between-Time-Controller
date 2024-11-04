@@ -11,17 +11,25 @@ static int64_t encLast = INT64_MAX;
 
 
 void encoder::setup() {
+    log_d("Encoder setup");
+#ifdef WOKWI
     ESP32Encoder::useInternalWeakPullResistors = puType::up;
+    but.attach(PIN_SW, INPUT_PULLUP);
+    but.setPressedState(LOW);
+#else
+    ESP32Encoder::useInternalWeakPullResistors = puType::none;
+    but.attach(PIN_SW, INPUT);
+    but.setPressedState(HIGH);
+#endif
+    but.interval(5);
     enc.attachSingleEdge(PIN_DT, PIN_CLK);
     enc.clearCount();
     enc.setFilter(1023);
-    but.attach(PIN_SW, INPUT_PULLUP);
-    but.setPressedState(LOW);
-    but.interval(5);
 }
 
 void encoder::setCallback(const EncoderCallback &cb) { callback = cb; }
 int64_t encoder::get() { return enc.getCount(); }
+
 void encoder::set(int64_t value) {
     log_d("Encoder set: %lld", value);
     enc.setCount(value);

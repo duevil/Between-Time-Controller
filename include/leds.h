@@ -6,7 +6,11 @@
 
 
 namespace leds {
-    constexpr inline auto PIN = GPIO_NUM_4; // TODO: define the GPIO pin number
+#ifdef WOKWI
+    constexpr inline auto PIN = GPIO_NUM_4;
+#else
+    constexpr inline auto PIN = GPIO_NUM_13;
+#endif
 
     struct Ref : Color {
         const ColorInput::Position position;

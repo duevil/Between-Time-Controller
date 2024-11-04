@@ -1,11 +1,12 @@
-#include "mqtt.h"
-#include "leds.h"
-#include "input.h"
-#include "timecode_display.h"
 #include "secrets.h"
 #include <WiFi.h>
-#include "states.h"
+#include "mqtt.h"
+#include "leds.h"
+#include "timecode_display.h"
+#include "graphic_display.h"
 #include "encoder.h"
+#include "input.h"
+#include "states.h"
 
 #ifdef WOKWI
 //! @brief Client ID
@@ -21,13 +22,16 @@ constexpr auto CLIENT_ID = "between-time-controller";
 constexpr auto MQTT_ROOT = "between-time/";
 #endif
 
+
+// TODO: add comments
+// TODO: state callback linkage und updating
+
+
 const char *makeCStr(auto...);
 template<states::Type type> states::ValueType<type> receiveValue(const uint8_t *, unsigned int,
                                                                  states::StateValue<type> &);
 template<states::Type type> void publishValue(const mqtt::Topic &, const states::ValueType<type> &);
 
-
-// U8G2_SH1106_128X64_NONAME_F_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/ 5, /* dc=*/ 17, /* reset=*/ 16);
 
 mqtt::Topic topicMain{
     makeCStr(MQTT_ROOT, "main"),
@@ -67,12 +71,6 @@ void setup() {
         log_i("Connected to %s at %s", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
     }
 
-    leds::setup();
-
-    input::setup();
-    input::setCallback(states::processInput);
-    input::setSync(true);
-
     mqtt::setup();
     mqtt::setClientID(CLIENT_ID);
     mqtt::setServer("test.mosquitto.org");
@@ -84,8 +82,35 @@ void setup() {
         static_cast<void>(topicScannedItems.subscribe());
     });
 
+    leds::setup();
+
     timecode_display::setup();
     timecode_display::set(0);
+
+    graphic_display::setup();
+
+    encoder::setup();
+    encoder::setCallback([](encoder::Event e) {
+        if (e == encoder::Event::PRESS) {
+            timecode_display::toggleBlinking(!timecode_display::isBlinking());
+            if (!timecode_display::isBlinking()) {
+                // TODO: change to subscript real timecode value
+                states::timecode() = static_cast<uint16_t>(abs(encoder::get()));
+            }
+            // TODO: remove this
+            if (static auto b = true; (b = !b)) graphic_display::clear();
+            else graphic_display::drawStr(0, 10, "Hello World!");
+        } else if (timecode_display::isBlinking()) {
+            // TODO: change to subscript real timecode value
+            timecode_display::set(static_cast<uint16_t>(abs(encoder::get())));
+        } else {
+            encoder::set(states::timecode().get());
+        }
+    });
+
+    input::setup();
+    input::setCallback(states::processInput);
+    input::setSync(true);
 
     states::setColorCallback(leds::setAll);
     using enum states::Type;
@@ -97,20 +122,6 @@ void setup() {
     states::candles().setCallback([](auto value) { publishValue<CANDLES>(topicCandles, value); });
     states::mazePosition().setCallback([](auto value) { publishValue<MAZE_POSITION>(topicMazePosition, value); });
     states::scannedItems().setCallback([](auto value) { publishValue<SCANNED_ITEMS>(topicScannedItems, value); });
-
-    encoder::setup();
-    encoder::setCallback([](encoder::Event e) {
-        if (e == encoder::Event::PRESS) {
-            timecode_display::toggleBlinking(!timecode_display::isBlinking());
-            if (!timecode_display::isBlinking()) {
-                states::timecode() = static_cast<uint16_t>(abs(encoder::get()));
-            }
-        } else if (timecode_display::isBlinking()) {
-            timecode_display::set(static_cast<uint16_t>(abs(encoder::get())));
-        } else {
-            encoder::set(states::timecode().get());
-        }
-    });
 }
 
 void loop() {
