@@ -34,15 +34,18 @@ void timecode_display::setup() {
 void timecode_display::set(const uint16_t timecode) {
     lastTimecode = timecode;
     display.showNumberHexEx(timecode, 0, true);
+    log_d("Timecode display show number hex: 0x%04X", timecode);
 }
 
 void timecode_display::toggleBlinking(const bool enable) {
     if (enable) {
-        log_i("Enabling blinking");
+        log_d("Enabling blinking");
         xEventGroupSetBits(eventGroup, BIT0);
     } else {
-        log_i("Disabling blinking");
+        log_d("Disabling blinking");
         xEventGroupClearBits(eventGroup, BIT0);
+        display.setBrightness(BRIGHTNESS);
+        display.showNumberHexEx(lastTimecode, 0, true);
     }
 }
 
@@ -50,11 +53,14 @@ bool timecode_display::isBlinking() { return xEventGroupGetBits(eventGroup); }
 
 
 [[noreturn]] static void blinkLoop(auto *) {
-    static bool on = true;
+    auto on = true;
     for (;;) {
-        if (!xEventGroupWaitBits(eventGroup, BIT0, pdFALSE, pdFALSE, portMAX_DELAY)) continue;
+        if (!xEventGroupWaitBits(eventGroup, BIT0, pdFALSE, pdFALSE, portMAX_DELAY)) {
+            on = false;
+            continue;
+        }
         on = !on;
-        display.setBrightness(BRIGHTNESS, on);
+        display.setBrightness(on ? BRIGHTNESS : 0);
         display.showNumberHexEx(lastTimecode, 0, true);
         vTaskDelay(pdMS_TO_TICKS(BLINK_INTERVAL));
     }

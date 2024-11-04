@@ -102,11 +102,11 @@ void setup() {
     encoder::setCallback([](encoder::Event e) {
         if (e == encoder::Event::PRESS) {
             timecode_display::toggleBlinking(!timecode_display::isBlinking());
-        } else if(timecode_display::isBlinking()) {
-            auto value = static_cast<uint16_t>(abs(encoder::get()));
-            // FIXME: crash caused by stack overflow due to calling publish in FreeRTOS timer task
-            //states::timecode() = value;
-            timecode_display::set(value);
+            if (!timecode_display::isBlinking()) {
+                states::timecode() = static_cast<uint16_t>(abs(encoder::get()));
+            }
+        } else if (timecode_display::isBlinking()) {
+            timecode_display::set(static_cast<uint16_t>(abs(encoder::get())));
         } else {
             encoder::set(states::timecode().get());
         }
@@ -121,6 +121,7 @@ void loop() {
     }
     mqtt::loop();
     input::loop();
+    encoder::loop();
 }
 
 

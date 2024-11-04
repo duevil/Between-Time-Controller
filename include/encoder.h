@@ -10,7 +10,7 @@ namespace encoder {
     constexpr auto PIN_DT = GPIO_NUM_12;
     constexpr auto PIN_SW = GPIO_NUM_13;
 
-    enum class Event { ROTATE_LEFT, ROTATE_RIGHT, PRESS, };
+    enum class Event { ROTATE_CCW, ROTATE_CW, PRESS, };
 
     using EncoderCallback = std::function<void(Event)>;
 
@@ -18,6 +18,7 @@ namespace encoder {
     void setCallback(const EncoderCallback &cb);
     int64_t get();
     void set(int64_t value);
+    void loop();
 }
 
 
