@@ -11,7 +11,7 @@ namespace maze {
 
         constexpr Position() : x(0), y(0) {}
         constexpr Position(auto x, auto y) : x(x), y(y) {}
-        constexpr explicit Position(auto p) : x(p >> 0 & 0xF0), y(p >> 4 & 0x0F) {}
+        constexpr explicit Position(auto p) : x(p >> 0 & 0xF), y(p >> 4 & 0xF) {}
 
         [[nodiscard]] auto toInt() const { return y << 4 | x << 0; }
 

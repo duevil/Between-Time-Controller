@@ -4,7 +4,7 @@
 using namespace timecode_display;
 
 
-static inline constexpr auto BLINK_INTERVAL = 100;
+static inline constexpr auto BLINK_INTERVAL = 330;
 static inline constexpr auto BLINK_TASK_STACK_SIZE = 2 << 11;
 static inline constexpr auto BRIGHTNESS = 7;
 

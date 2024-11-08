@@ -8,19 +8,15 @@
 #include "input.h"
 #include "states.h"
 
-#ifdef WOKWI
+// TODO: implement MQTT config manager
 //! @brief Client ID
 //! @note Base64 encoding of 'between-time-controller' to ensure uniqueness for connecting to public MQTT brokers
 constexpr auto CLIENT_ID = "YmV0d2Vlbi10aW1lLWNvbnRyb2xsZXI";
+//! @brief MQTT server host
+constexpr auto MQTT_SERVER = "test.mosquitto.org";
 //! @brief MQTT topic path root
 //! @note Base64 encoding of 'between-time' to obscure path for reduced visibility in public MQTT brokers
 constexpr auto MQTT_ROOT = "YmV0d2Vlbi10aW1l/";
-#else
-//! @brief Client ID;
-constexpr auto CLIENT_ID = "between-time-controller";
-//! @brief MQTT topic path root
-constexpr auto MQTT_ROOT = "between-time/";
-#endif
 
 
 // TODO: add comments
@@ -73,7 +69,7 @@ void setup() {
 
     mqtt::setup();
     mqtt::setClientID(CLIENT_ID);
-    mqtt::setServer("test.mosquitto.org");
+    mqtt::setServer(MQTT_SERVER);
     mqtt::setOnConnect([] {
         static_cast<void>(topicMain.subscribe());
         static_cast<void>(topicTimecode.subscribe());
@@ -147,12 +143,11 @@ template<states::Type type>
 states::ValueType<type> receiveValue(const uint8_t *payload,
                                      unsigned int length,
                                      states::StateValue<type> &stateValue) {
-    String data{reinterpret_cast<const char*>(payload), length};
+    String data{reinterpret_cast<const char *>(payload), length};
     using namespace states;
     using enum Type;
     using v_t = ValueType<type>;
-    if /**/ constexpr (type == MAIN) stateValue = static_cast<v_t>(data.toInt());
-    else if constexpr (type == TIMECODE) stateValue = static_cast<v_t>(strtoul(data.c_str(), nullptr, 16));
+    if /**/ constexpr (type == MAIN || type == TIMECODE) stateValue = static_cast<v_t>(data.toInt());
     else if constexpr (type == CANDLES || type == SCANNED_ITEMS) stateValue = data.toInt();
     else if constexpr (type == MAZE_POSITION) stateValue = v_t{data.toInt()};
     return stateValue.get();
@@ -163,8 +158,8 @@ void publishValue(const mqtt::Topic &topic, const states::ValueType<type> &value
     String payload;
     using enum states::Type;
     if /**/ constexpr (type == MAIN) payload = String{static_cast<states::MainValue::Value>(value)};
-    else if constexpr (type == TIMECODE) payload = String{value, 16};
+    else if constexpr (type == TIMECODE) payload = String{value};
     else if constexpr (type == CANDLES || type == SCANNED_ITEMS) payload = String{value.to_string().c_str()};
-    else if constexpr (type == MAZE_POSITION) payload = String{value.toInt(), 16};
+    else if constexpr (type == MAZE_POSITION) payload = String{value.toInt()};
     static_cast<void>(topic.publish(payload.c_str()));
 }
