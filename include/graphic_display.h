@@ -1,7 +1,7 @@
 #ifndef GRAPHIC_DISPLAY_H
 #define GRAPHIC_DISPLAY_H
 
-#include <maze.h>
+#include <Maze.hpp>
 #include <Arduino.h>
 
 
@@ -16,7 +16,7 @@ namespace graphic_display {
     void drawStr(uint8_t, uint8_t, const char *);
     void drawInputField(/* TODO */);
     void drawCode(const char* code);
-    void drawMaze(const maze::Position &position);
+    void drawMaze(const Maze::Position &position);
 }
 
 

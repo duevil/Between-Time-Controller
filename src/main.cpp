@@ -7,6 +7,7 @@
 #include "encoder.h"
 #include "input.h"
 #include "states.h"
+#include "values.h"
 
 // TODO: implement MQTT config manager
 //! @brief Client ID
@@ -87,18 +88,17 @@ void setup() {
 
     encoder::setup();
     encoder::setCallback([](encoder::Event e) {
+        auto tci = static_cast<uint16_t>(abs(encoder::get()));
         if (e == encoder::Event::PRESS) {
             timecode_display::toggleBlinking(!timecode_display::isBlinking());
             if (!timecode_display::isBlinking()) {
-                // TODO: change to subscript real timecode value
-                states::timecode() = static_cast<uint16_t>(abs(encoder::get()));
+                states::timecode() = values::TIMECODES[tci % values::TC_SIZE];
             }
             // TODO: remove this
             if (static auto b = true; (b = !b)) graphic_display::clear();
             else graphic_display::drawStr(0, 10, "Hello World!");
         } else if (timecode_display::isBlinking()) {
-            // TODO: change to subscript real timecode value
-            timecode_display::set(static_cast<uint16_t>(abs(encoder::get())));
+            timecode_display::set(values::TIMECODES[tci % values::TC_SIZE]);
         } else {
             encoder::set(states::timecode().get());
         }
@@ -140,8 +140,7 @@ const char *makeCStr(auto... args) {
 }
 
 template<states::Type type>
-states::ValueType<type> receiveValue(const uint8_t *payload,
-                                     unsigned int length,
+states::ValueType<type> receiveValue(const uint8_t *payload, unsigned int length,
                                      states::StateValue<type> &stateValue) {
     String data{reinterpret_cast<const char *>(payload), length};
     using namespace states;

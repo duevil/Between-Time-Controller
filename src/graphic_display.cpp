@@ -46,7 +46,7 @@ void graphic_display::drawCode(const char *code) {
     // TODO
 }
 
-void graphic_display::drawMaze(const maze::Position &position) {
+void graphic_display::drawMaze(const Maze::Position &position) {
     log_d("drawMaze: [%d, %d]", position.x, position.y);
     // TODO
 }

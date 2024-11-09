@@ -1,7 +1,7 @@
 #ifndef STATES_H
 #define STATES_H
 
-#include "maze.h"
+#include "Maze.hpp"
 #include "ColorInput.hpp"
 #include <functional>
 
@@ -37,7 +37,7 @@ namespace states {
         type == Type::MAIN, MainValue, std::conditional_t<
             type == Type::TIMECODE, uint16_t, std::conditional_t<
                 type == Type::CANDLES, std::bitset<4>, std::conditional_t<
-                    type == Type::MAZE_POSITION, maze::Position, std::conditional_t<
+                    type == Type::MAZE_POSITION, Maze::Position, std::conditional_t<
                         type == Type::SCANNED_ITEMS, std::bitset<8>, void>>>>>;
 
     template<Type type>
