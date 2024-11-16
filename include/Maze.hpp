@@ -3,6 +3,9 @@
 
 
 struct Maze {
+    static constexpr auto SIZE_X = 8;
+    static constexpr auto SIZE_Y = 8;
+
     enum class Direction { NORTH, EAST, SOUTH, WEST };
 
     struct Position {

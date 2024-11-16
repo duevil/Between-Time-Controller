@@ -15,18 +15,17 @@ struct ColorInput {
 
     class {
         using Array = std::array<Position, SIZE>;
-        const Array positions_ = []<auto... I>(std::index_sequence<I...>) consteval {
+        const Array positions = []<auto... I>(std::index_sequence<I...>) consteval {
             return Array{static_cast<Position>(I)...};
         }(std::make_index_sequence<SIZE>{});
 
     public:
-        [[nodiscard]] constexpr Array::const_iterator begin() const { return positions_.begin(); }
-        [[nodiscard]] constexpr Array::const_iterator end() const { return positions_.end(); }
-    } const static positions;
+        [[nodiscard]] constexpr Array::const_iterator begin() const { return positions.begin(); }
+        [[nodiscard]] constexpr Array::const_iterator end() const { return positions.end(); }
+    } const static POSITIONS;
 
     Colors colors{};
     Input inputs{};
-    bool shouldSync = false;
 
     struct Proxy {
         const Position position;
@@ -46,14 +45,21 @@ struct ColorInput {
     bool operator==(const ColorInput &other) const = default;
 
     void sync() {
-        if (!shouldSync) return;
-        for (auto i : positions) {
-            colors[i] = inputs.test(i) ? "white" : "black";
+        for (auto i : POSITIONS) {
+            colors[i] = inputs.test(i) ? "on" : "off";
         }
+    }
+
+    static consteval Colors all(const Color &color) {
+        Colors colors{};
+        for (auto i : POSITIONS) {
+            colors[i] = color;
+        }
+        return colors;
     }
 };
 
-constexpr decltype(ColorInput::positions) ColorInput::positions{};
+constexpr decltype(ColorInput::POSITIONS) ColorInput::POSITIONS{};
 
 
 #endif //COLOR_INPUT_HPP

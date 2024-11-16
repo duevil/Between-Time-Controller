@@ -10,13 +10,12 @@ namespace graphic_display {
     constexpr inline auto PIN_DC = GPIO_NUM_17;
     constexpr inline auto PIN_RST = GPIO_NUM_16;
 
+    enum class Type { NORMAL, CODE, MAZE};
+
     void setup();
     void clear();
     void setCursor(uint8_t x, uint8_t y);
-    void drawStr(uint8_t, uint8_t, const char *);
-    void drawInputField(/* TODO */);
-    void drawCode(const char* code);
-    void drawMaze(const Maze::Position &position);
+    void draw(const char *s, Type type);
 }
 
 

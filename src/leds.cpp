@@ -1,6 +1,5 @@
 #include "leds.h"
 #include <Adafruit_NeoPixel.h>
-#include <ColorInput.hpp>
 
 using namespace leds;
 
@@ -35,7 +34,7 @@ Ref leds::get(ColorInput::Position position) { return Ref{position}; }
 
 void leds::setAll(const ColorInput::Colors &colors) {
     log_d("Setting all leds");
-    for (auto i : ColorInput::positions) {
+    for (auto i : ColorInput::POSITIONS) {
         log_d("Setting led at position [%d] to: %s", i, colors[i].toString());
         pixels.setPixelColor(i, colors[i].value);
     }

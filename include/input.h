@@ -18,13 +18,12 @@ namespace input {
         }
     }
 
-    using Callback = std::function<void(const ColorInput &)>;
+    using Callback = std::function<void(const ColorInput::Input &)>;
 
     void setup();
     void loop();
     void setCallback(Callback callback);
-    const ColorInput &get();
-    void setSync(bool sync);
+    const ColorInput::Input &get();
 }
 
 

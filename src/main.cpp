@@ -21,7 +21,6 @@ constexpr auto MQTT_ROOT = "YmV0d2Vlbi10aW1l/";
 
 
 // TODO: add comments
-// TODO: state callback linkage und updating
 
 
 const char *makeCStr(auto...);
@@ -94,9 +93,6 @@ void setup() {
             if (!timecode_display::isBlinking()) {
                 states::timecode() = values::TIMECODES[tci % values::TC_SIZE];
             }
-            // TODO: remove this
-            if (static auto b = true; (b = !b)) graphic_display::clear();
-            else graphic_display::drawStr(0, 10, "Hello World!");
         } else if (timecode_display::isBlinking()) {
             timecode_display::set(values::TIMECODES[tci % values::TC_SIZE]);
         } else {
@@ -105,10 +101,24 @@ void setup() {
     });
 
     input::setup();
-    input::setCallback(states::processInput);
-    input::setSync(true);
+    input::setCallback(states::setInput);
 
     states::setColorCallback(leds::setAll);
+    states::setDrawCallback([](const char *s) {
+        if (!s) {
+            graphic_display::clear();
+            return;
+        }
+        auto type = [] {
+            using enum graphic_display::Type;
+            switch (states::mainState()->value) {
+                case states::MainValue::INPUT_FIELD_SOLVED - 1: return CODE;
+                case states::MainValue::MAZE_SOLVED - 1: return MAZE;
+                default: return NORMAL;
+            }
+        }();
+        draw(s, type);
+    });
     using enum states::Type;
     states::mainState().setCallback([](auto value) { publishValue<MAIN>(topicMain, value); });
     states::timecode().setCallback([](auto value) {
@@ -121,11 +131,11 @@ void setup() {
 }
 
 void loop() {
-    // TODO: remove for release
+    /*// TODO: remove for release
     if (static auto last = millis(); millis() - last > 1000) {
         last = millis();
         log_d("[%lu] Free heap: %lu", millis(), ESP.getFreeHeap());
-    }
+    }*/
     mqtt::loop();
     input::loop();
     encoder::loop();

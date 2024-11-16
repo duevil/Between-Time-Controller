@@ -22,6 +22,7 @@ namespace values {
     constexpr inline auto &TC_0B10 = TIMECODES[TCI_0B10];
     constexpr inline auto &TC_0B11 = TIMECODES[TCI_0B11];
     constexpr inline ColorInput::Position INPUT_FIELD_OPEN = ColorInput::IR;
+    constexpr inline auto INPUT_CODE = "485361";
     constexpr static ColorInput::Colors CANDLES_COLORS = {
         "yellow", "green", "black", "red", "cyan"
     };
@@ -34,7 +35,7 @@ namespace values {
         0x2CA393CA, 0x2D6CA658, 0xA3554D3C, 0xC65554D,
     };
     constexpr inline Maze::Position MAZE_START = {0, 0};
-    constexpr inline Maze::Position MAZE_END = {7, 7};
+    constexpr inline Maze::Position MAZE_END = {Maze::SIZE_X, Maze::SIZE_Y};
 }
 
 

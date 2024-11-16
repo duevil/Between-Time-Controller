@@ -15,19 +15,19 @@ namespace states {
             STARTED            = 1,
             INPUT_FIELD_OPENED = 2,
             INPUT_FIELD_SOLVED = 3,
-            CANDLES_SOLVED     = 4,
-            BOOK_BINARY_SOLVED = 5,
-            MAZE_ACTIVE        = 6,
-            MAZE_SOLVED        = 7,
-            ARCADE_UNLOCKED    = 8,
-            ALL_ITEMS_SCANNED  = 9,
-            GAME_WON           = 10,
-            GAME_LOST          = 11
+            CANDLES_PLACED     = 4,
+            CANDLES_SOLVED     = 5,
+            BOOK_BINARY_SOLVED = 6,
+            MAZE_ACTIVE        = 7,
+            MAZE_SOLVED        = 8,
+            ARCADE_UNLOCKED    = 9,
+            ALL_ITEMS_SCANNED  = 10,
+            GAME_WON           = 11,
+            GAME_LOST          = 12
         } value;
 
         MainValue() : value(IDLE) {}
         explicit(false) MainValue(auto v) : value(static_cast<Value>(v)) {}
-        [[nodiscard]] bool changeAllowed() const;
         bool operator==(const MainValue &other) const { return value == other.value; }
         explicit operator Value() const { return value; }
     };
@@ -48,11 +48,12 @@ namespace states {
         virtual ~StateValue() = 0;
         void setCallback(const Callback &callback) { this->callback = callback; }
         const value_t &get() const { return this->value; }
+        const value_t *operator->() { return &this->value; }
 
         void set(const value_t &value) {
             if (this->value != value) {
                 this->value = value;
-                callback(this->value);
+                if (callback) callback(this->value);
                 onChange(this->value);
             }
         }
@@ -79,8 +80,10 @@ namespace states {
     StateValue<Type::SCANNED_ITEMS> &scannedItems();
 
     using ColorCallback = std::function<void(const ColorInput::Colors &)>;
+    using DrawCallback = std::function<void(const char *)>;
     void setColorCallback(ColorCallback callback);
-    void processInput(const ColorInput &input);
+    void setDrawCallback(DrawCallback callback);
+    void setInput(const ColorInput::Input &input);
     void reset();
 }
 
