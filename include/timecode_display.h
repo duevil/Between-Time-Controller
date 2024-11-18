@@ -9,7 +9,7 @@ namespace timecode_display {
     constexpr inline auto PIN_CLK = GPIO_NUM_16;
     constexpr inline auto PIN_DIO = GPIO_NUM_17;
 #else
-    constexpr inline auto PIN_CLK = GPIO_NUM_12;
+    constexpr inline auto PIN_CLK = GPIO_NUM_15;
     constexpr inline auto PIN_DIO = GPIO_NUM_14;
 #endif
 

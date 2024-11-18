@@ -83,6 +83,7 @@ namespace states {
     VisitedMaze &visitedMaze();
     const char *timer();
 
+    bool gameRunning();
     void subscribeToTopics();
     void reset();
     void processInput(const ColorInput::Input &input);

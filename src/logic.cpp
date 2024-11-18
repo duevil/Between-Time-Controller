@@ -227,6 +227,7 @@ void states::onChange<states::Type::SCANNED_ITEMS>(const ValueType<Type::SCANNED
 
 void states::processInput(const ColorInput::Input &input) {
     colorInput.inputs = input;
+    if (!gameRunning()) return;
     setDisplayAndLEDs();
     if (changeAllowed() != Change::ALLOWED) return;
     using enum MainValue::Value;

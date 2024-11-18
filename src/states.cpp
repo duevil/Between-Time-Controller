@@ -112,6 +112,13 @@ State<SCANNED_ITEMS> &states::scannedItems() { return get<SCANNED_ITEMS>(); }
 VisitedMaze &states::visitedMaze() { return visitedMaze_; }
 const char *states::timer() { return timer_.value.c_str(); }
 
+bool states::gameRunning() {
+    auto ms = mainState()->value;
+    using enum MainValue::Value;
+    // allow input processing only when game is active
+    return !(ms == IDLE || ms == GAME_LOST || ms == GAME_WON);
+}
+
 void states::subscribeToTopics() {
     for (auto &s_ : stateValues() | std::views::values) std::visit([](auto &s) { s.topic.subscribe(); }, s_);
     static_cast<void>(mqtt::Topic::create((MQTT_ROOT + std::string{"timer"}).c_str(), std::ref(timer_)).subscribe());

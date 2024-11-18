@@ -105,7 +105,7 @@ bool TopicImpl::subscribe() const {
 }
 
 bool TopicImpl::publish(const char *message) const {
-    auto res = client.publish(topic.c_str(), message);
+    auto res = client.publish(topic.c_str(), message, true);
     if (res)
         log_i("Published message on topic '%s': %s", topic.c_str(), message);
     else
