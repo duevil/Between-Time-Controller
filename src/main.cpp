@@ -61,10 +61,9 @@ void setup() {
 }
 
 void loop() {
-    // TODO: remove for release
-    if (static auto last = millis(); millis() - last > 5000) {
+    if (static auto last = millis(); millis() - last > 20000) {
         last = millis();
-        log_d("[%lu] Free heap: %lu", millis(), ESP.getFreeHeap());
+        log_d("Heartbeat");
     }
     mqtt::loop();
     input::loop();

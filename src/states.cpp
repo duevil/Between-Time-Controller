@@ -4,7 +4,6 @@
 #include "values.h"
 #include <variant>
 #include <ranges>
-#include <bits/ranges_algobase.h>
 
 using namespace states;
 using enum Type;
@@ -39,7 +38,20 @@ struct : VisitedMaze {
 
 private:
     char str[(Maze::SIZE_X + 1) * Maze::SIZE_Y + 1]{};
-} visitedMaze_;
+} static visitedMaze_;
+
+struct {
+    void operator()(const uint8_t *payload, unsigned int length) {
+        std::string data{reinterpret_cast<const char *>(payload), length};
+        auto val = std::stoi(data);
+        value[0] = static_cast<char>(val / 60 + '0');
+        value[2] = static_cast<char>(val % 60 / 10 + '0');
+        value[3] = static_cast<char>(val % 10 + '0');
+        drawTimer(value.c_str());
+    }
+
+    std::string value = "0:00";
+} static timer_;
 
 
 template<Type type>
@@ -75,10 +87,8 @@ static SV<type> &get() { return get<SV<type>>(stateValues().at(type)); }
 
 
 template<Type type> void SV<type>::onReceive(const uint8_t *payload, unsigned int length) {
-    SV &sv = get<type>();
     std::string data{reinterpret_cast<const char *>(payload), length};
-    auto val = std::stoi(data);
-    sv.set(value_t{val});
+    get<type>().set(value_t{std::stoi(data)});
 }
 
 template<Type type> void SV<type>::onChange(value_t &value) {
@@ -100,9 +110,11 @@ State<CANDLES> &states::candles() { return get<CANDLES>(); }
 State<MAZE_POSITION> &states::mazePosition() { return get<MAZE_POSITION>(); }
 State<SCANNED_ITEMS> &states::scannedItems() { return get<SCANNED_ITEMS>(); }
 VisitedMaze &states::visitedMaze() { return visitedMaze_; }
+const char *states::timer() { return timer_.value.c_str(); }
 
 void states::subscribeToTopics() {
     for (auto &s_ : stateValues() | std::views::values) std::visit([](auto &s) { s.topic.subscribe(); }, s_);
+    static_cast<void>(mqtt::Topic::create((MQTT_ROOT + std::string{"timer"}).c_str(), std::ref(timer_)).subscribe());
 }
 
 void states::reset() {

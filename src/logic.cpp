@@ -4,15 +4,16 @@
 #include "graphic_display.h"
 #include "timecode_display.h"
 #include "encoder.h"
+#include <Ticker.h>
+
 
 #define nl "\n"
 
 
-// TODO: Add short LED blinking when solving a state
-
-
 static ColorInput colorInput;
 static uint8_t inputMustReset = false;
+static Ticker blinker{};
+
 
 enum class Change {
     ALLOWED,
@@ -68,32 +69,30 @@ static Change changeAllowed() {
     return WAITING_FOR_INPUT_RESET;
 }
 
-static void setDisplayAndLEDs(states::MainValue::Value value = states::mainState()->value) {
-    using namespace graphic_display;
+static void setDisplayAndLEDs(states::MainValue::Value value = states::mainState()->value, bool leds = true) {
+    using namespace states;
     const char *text = nullptr;
-    auto type = Type::NORMAL;
+    auto type = graphic_display::Type::NORMAL;
     colorInput.colors = ColorInput::all("black");
     using enum Change;
     switch (changeAllowed()) {
         case WAITING_FOR_TIMECODE:
-            type = Type::NORMAL;
             text = "Waiting for sync...";
             colorInput.colors = ColorInput::all("off");
             break;
         case WAITING_FOR_INPUT_RESET:
-            type = Type::NORMAL;
             if (inputMustReset == 2) text = "All candles must be" nl "switched in the" nl "correct order...";
             else text = "All switches must be" nl "off to continue...";
             colorInput.sync("red");
             break;
         case ALLOWED:
-            using enum states::MainValue::Value;
+            using enum MainValue::Value;
             switch (value) {
                 case IDLE:
                     text = "Waiting for the game" nl "to start...";
                     break;
                 case INPUT_FIELD_SOLVED - 1:
-                    type = Type::CODE;
+                    type = graphic_display::Type::CODE;
                     text = values::INPUT_CODE;
                     break;
                 case CANDLES_SOLVED - 1:
@@ -103,31 +102,51 @@ static void setDisplayAndLEDs(states::MainValue::Value value = states::mainState
                     colorInput.sync();
                     break;
                 case MAZE_SOLVED - 1:
-                    type = Type::MAZE;
-                    text = states::visitedMaze().string();
+                    type = graphic_display::Type::MAZE;
+                    text = visitedMaze().string();
                     colorInput.sync("yellow");
                     colorInput[ColorInput::M].color = "";
                     break;
+                case MAZE_SOLVED:
+                    text = ""; // Prevent clearing
+                    break;
                 case GAME_LOST:
                     text = "Game over!" nl "You lost!";
+                    colorInput.colors = ColorInput::all("red");
                     break;
                 case GAME_WON:
                     text = "Congratulations!" nl "You won the game!";
+                    colorInput.colors = ColorInput::all("green");
                     break;
                 default: break; // Nothing to draw
             }
             break; // No overwriting
     }
-    if (!text) clear();
-    else draw(text, type);
-    leds::set(colorInput.colors);
+    graphic_display::clear();
+    if (text) draw(text, type);
+    drawTimer();
+    if (leds) leds::set(colorInput.colors);
+}
+
+static void blink(auto color) {
+    int count = 0;
+    auto colors = ColorInput::all(color);
+    leds::set(colors);
+    blinker.attach_ms(150, [count, colors]() mutable {
+        if (count >= 5) {
+            blinker.detach();
+            setDisplayAndLEDs();
+        } else {
+            leds::set(count % 2 ? colors : ColorInput::all("black"));
+            ++count;
+        }
+    });
 }
 
 
 template<>
 void states::onChange<states::Type::MAIN>(const ValueType<Type::MAIN> &value) {
     log_i("Main state changed to %d", value.value);
-    graphic_display::clear();
     inputMustReset = false;
     using enum MainValue::Value;
     switch (value.value) {
@@ -142,7 +161,33 @@ void states::onChange<states::Type::MAIN>(const ValueType<Type::MAIN> &value) {
             break;
         default: break; // No action required
     }
-    setDisplayAndLEDs(value.value);
+    setDisplayAndLEDs(value.value, false);
+    switch (value.value) {
+        case IDLE:
+            // we're not setting leds above, so we need to do it here
+            leds::set(ColorInput::all("black"));
+            break;
+        case STARTED:
+            blink("white");
+            break;
+        case INPUT_FIELD_OPENED:
+        case INPUT_FIELD_SOLVED:
+        case CANDLES_PLACED:
+        case CANDLES_SOLVED:
+        case BOOK_BINARY_SOLVED:
+        case MAZE_ACTIVE:
+        case MAZE_SOLVED:
+        case ARCADE_UNLOCKED:
+        case ALL_ITEMS_SCANNED:
+            blink("cyan");
+            break;
+        case GAME_LOST:
+            blink("red");
+            break;
+        case GAME_WON:
+            blink("green");
+            break;
+    }
 }
 
 template<>
@@ -227,4 +272,9 @@ void states::processInput(const ColorInput::Input &input) {
         }
         default: break; // No action required
     }
+}
+
+void states::drawTimer(const char *value) {
+    draw(value, graphic_display::Type::TIMER);
+    log_d("Timer: %s", value);
 }

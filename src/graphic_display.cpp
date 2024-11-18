@@ -53,20 +53,20 @@ void graphic_display::setup() {
     u8g2.setFont(u8g2_font_ncenB08_tf);
 }
 
-void graphic_display::clear() { u8g2.clear(); }
+void graphic_display::clear() { u8g2.clearBuffer(); }
 
 void graphic_display::draw(const char *s, Type type) {
-    u8g2.clearBuffer();
     uint8_t xOff = 4;
     uint8_t yOff = 4;
     using enum Type;
     switch (type) {
         case NORMAL:
             log_d("Drawing normal text: \n%s", s);
-            u8g2.setFont(u8g2_font_ncenB08_tf);
+            u8g2.setFont(u8g2_font_crox1hb_tr);
             break;
         case CODE: // TODO: set font and offset
             log_d("Drawing code text: \n%s", s);
+            u8g2.setFont(u8g2_font_crox1hb_tr);
             break;
         case MAZE:
             log_d("Drawing maze text: \n%s", s);
@@ -75,8 +75,14 @@ void graphic_display::draw(const char *s, Type type) {
 #else
             u8g2.setFont(maze_crumbs);
 #endif
-            xOff = 32;
+            xOff = 16;
             yOff = 0;
+            break;
+        case TIMER:
+            log_d("Drawing timer text: \n%s", s);
+            u8g2.setFont(u8g2_font_crox1cb_mn);
+            xOff = static_cast<uint8_t>(u8g2.getDisplayWidth() - u8g2.getStrWidth(s));
+            yOff = static_cast<uint8_t>(u8g2.getDisplayHeight() - u8g2.getMaxCharHeight() - 4);
             break;
     }
     // draw multiline text
@@ -86,7 +92,7 @@ void graphic_display::draw(const char *s, Type type) {
                  views::split("\n"sv) |
                  views::transform([](auto r) { return string{data(r), size(r)}; });
     for (uint8_t i = 1; const string &line : lines) {
-        u8g2.drawStr(xOff, yOff + height * i, line.c_str());
+        u8g2.drawStr(xOff, yOff + i + height * i, line.c_str());
         ++i;
     }
     u8g2.sendBuffer();

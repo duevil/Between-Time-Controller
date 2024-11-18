@@ -50,7 +50,7 @@ struct ColorInput {
         }
     }
 
-    static consteval Colors all(const Color &color) {
+    static constexpr Colors all(const Color &color) {
         Colors colors{};
         for (auto i : POSITIONS) {
             colors[i] = color;

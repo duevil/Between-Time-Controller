@@ -80,12 +80,13 @@ namespace states {
     State<Type::CANDLES> &candles();
     State<Type::MAZE_POSITION> &mazePosition();
     State<Type::SCANNED_ITEMS> &scannedItems();
-
     VisitedMaze &visitedMaze();
+    const char *timer();
 
     void subscribeToTopics();
     void reset();
     void processInput(const ColorInput::Input &input);
+    void drawTimer(const char *value = timer());
     template<Type type>
     void onChange(const ValueType<type> &value);
 }
