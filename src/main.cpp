@@ -1,57 +1,17 @@
 #include "secrets.h"
-#include <WiFi.h>
+#include "mqtt_params.h"
 #include "mqtt.h"
 #include "leds.h"
-#include "timecode_display.h"
 #include "graphic_display.h"
-#include "encoder.h"
+#include "timecode_display.h"
 #include "input.h"
-#include "states.h"
+#include "encoder.h"
 #include "values.h"
-
-// TODO: implement MQTT config manager
-//! @brief Client ID
-//! @note Base64 encoding of 'between-time-controller' to ensure uniqueness for connecting to public MQTT brokers
-constexpr auto CLIENT_ID = "YmV0d2Vlbi10aW1lLWNvbnRyb2xsZXI";
-//! @brief MQTT server host
-constexpr auto MQTT_SERVER = "test.mosquitto.org";
-//! @brief MQTT topic path root
-//! @note Base64 encoding of 'between-time' to obscure path for reduced visibility in public MQTT brokers
-constexpr auto MQTT_ROOT = "YmV0d2Vlbi10aW1l/";
+#include "states.h"
+#include <WiFi.h>
 
 
 // TODO: add comments
-
-
-const char *makeCStr(auto...);
-template<states::Type type> states::ValueType<type> receiveValue(const uint8_t *, unsigned int,
-                                                                 states::StateValue<type> &);
-template<states::Type type> void publishValue(const mqtt::Topic &, const states::ValueType<type> &);
-
-
-mqtt::Topic topicMain{
-    makeCStr(MQTT_ROOT, "main"),
-    [](const uint8_t *payload, unsigned int length) { receiveValue(payload, length, states::mainState()); }
-};
-mqtt::Topic topicTimecode{
-    makeCStr(MQTT_ROOT, "timecode"),
-    [](const uint8_t *payload, unsigned int length) {
-        auto val = receiveValue(payload, length, states::timecode());
-        timecode_display::set(val);
-    }
-};
-mqtt::Topic topicCandles{
-    makeCStr(MQTT_ROOT, "candles"),
-    [](const uint8_t *payload, unsigned int length) { receiveValue(payload, length, states::candles()); }
-};
-mqtt::Topic topicMazePosition{
-    makeCStr(MQTT_ROOT, "maze"),
-    [](const uint8_t *payload, unsigned int length) { receiveValue(payload, length, states::mazePosition()); }
-};
-mqtt::Topic topicScannedItems{
-    makeCStr(MQTT_ROOT, "arcade"),
-    [](const uint8_t *payload, unsigned int length) { receiveValue(payload, length, states::scannedItems()); }
-};
 
 
 void setup() {
@@ -70,105 +30,43 @@ void setup() {
     mqtt::setup();
     mqtt::setClientID(CLIENT_ID);
     mqtt::setServer(MQTT_SERVER);
-    mqtt::setOnConnect([] {
-        static_cast<void>(topicMain.subscribe());
-        static_cast<void>(topicTimecode.subscribe());
-        static_cast<void>(topicCandles.subscribe());
-        static_cast<void>(topicMazePosition.subscribe());
-        static_cast<void>(topicScannedItems.subscribe());
-    });
+    mqtt::setOnConnect(states::subscribeToTopics);
 
     leds::setup();
-
+    graphic_display::setup();
     timecode_display::setup();
     timecode_display::set(0);
 
-    graphic_display::setup();
-
     encoder::setup();
     encoder::setCallback([](encoder::Event e) {
-        auto tci = static_cast<uint16_t>(abs(encoder::get()));
+        using namespace timecode_display;
+        auto i = static_cast<uint16_t>(abs(encoder::get()));
         if (e == encoder::Event::PRESS) {
-            timecode_display::toggleBlinking(!timecode_display::isBlinking());
-            if (!timecode_display::isBlinking()) {
-                states::timecode() = values::TIMECODES[tci % values::TC_SIZE];
+            toggleBlinking(!isBlinking());
+            if (!isBlinking()) {
+                states::timecode() = values::TIMECODES[i % values::TC_SIZE];
             }
-        } else if (timecode_display::isBlinking()) {
-            timecode_display::set(values::TIMECODES[tci % values::TC_SIZE]);
+        } else if (isBlinking()) {
+            set(values::TIMECODES[i % values::TC_SIZE]);
         } else {
             encoder::set(states::timecode().get());
         }
     });
 
     input::setup();
-    input::setCallback(states::setInput);
+    input::setCallback(states::processInput);
 
-    states::setColorCallback(leds::setAll);
-    states::setDrawCallback([](const char *s) {
-        if (!s) {
-            graphic_display::clear();
-            return;
-        }
-        auto type = [] {
-            using enum graphic_display::Type;
-            switch (states::mainState()->value) {
-                case states::MainValue::INPUT_FIELD_SOLVED - 1: return CODE;
-                case states::MainValue::MAZE_SOLVED - 1: return MAZE;
-                default: return NORMAL;
-            }
-        }();
-        draw(s, type);
-    });
-    using enum states::Type;
-    states::mainState().setCallback([](auto value) { publishValue<MAIN>(topicMain, value); });
-    states::timecode().setCallback([](auto value) {
-        publishValue<TIMECODE>(topicTimecode, value);
-        encoder::set(value);
-    });
-    states::candles().setCallback([](auto value) { publishValue<CANDLES>(topicCandles, value); });
-    states::mazePosition().setCallback([](auto value) { publishValue<MAZE_POSITION>(topicMazePosition, value); });
-    states::scannedItems().setCallback([](auto value) { publishValue<SCANNED_ITEMS>(topicScannedItems, value); });
+    states::reset();
+    states::processInput(0);
 }
 
 void loop() {
-    /*// TODO: remove for release
-    if (static auto last = millis(); millis() - last > 1000) {
+    // TODO: remove for release
+    if (static auto last = millis(); millis() - last > 5000) {
         last = millis();
         log_d("[%lu] Free heap: %lu", millis(), ESP.getFreeHeap());
-    }*/
+    }
     mqtt::loop();
     input::loop();
     encoder::loop();
-}
-
-
-const char *makeCStr(auto... args) {
-    auto str = (String{} + ... + args);
-    auto c_str = new char[str.length() + 1];
-    strcpy(c_str, str.c_str());
-    return c_str;
-}
-
-template<states::Type type>
-states::ValueType<type> receiveValue(const uint8_t *payload, unsigned int length,
-                                     states::StateValue<type> &stateValue) {
-    String data{reinterpret_cast<const char *>(payload), length};
-    using namespace states;
-    using enum Type;
-    using v_t = ValueType<type>;
-    if /**/ constexpr (type == MAIN || type == TIMECODE) stateValue = static_cast<v_t>(data.toInt());
-    else if constexpr (type == CANDLES || type == SCANNED_ITEMS) stateValue = data.toInt();
-    else if constexpr (type == MAZE_POSITION) stateValue = v_t{data.toInt()};
-    return stateValue.get();
-}
-
-template<states::Type type>
-void publishValue(const mqtt::Topic &topic, const states::ValueType<type> &value) {
-    String payload;
-    using enum states::Type;
-    if /**/ constexpr (type == MAIN) payload = String{static_cast<states::MainValue::Value>(value)};
-    else if constexpr (type == TIMECODE) payload = String{value};
-    else if constexpr (type == CANDLES || type == SCANNED_ITEMS) payload = String{value.to_string().c_str()};
-    else if constexpr (type == MAZE_POSITION) payload = String{value.toInt()};
-    static_cast<void>(topic.publish(payload.c_str()));
 }

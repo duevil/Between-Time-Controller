@@ -1,11 +1,24 @@
 #include "mqtt.h"
-#include <utility>
+#include <Preferences.h>
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <PubSubClient.h>
-#include <Preferences.h>
+#include <ranges>
+#include <unordered_set>
 
-static std::unordered_map<std::string_view, mqtt::Topic::Callback> callbacks{};
+
+struct TopicImpl final : mqtt::Topic {
+    std::string topic;
+    Callback callback;
+
+    explicit TopicImpl(const char *topic, Callback callback);
+    ~TopicImpl() override;
+    bool subscribe() const override;
+    bool publish(const char *message) const override;
+};
+
+
+static std::unordered_set<std::unique_ptr<TopicImpl>> topics{};
 static WiFiClient wifiClient{};
 static PubSubClient client{wifiClient};
 static Preferences prefs{};
@@ -18,9 +31,6 @@ static bool connect();
 static void logState();
 
 
-/*!
- * @brief Loads the MQTT server host from non-volatile storage and initializes the MQTT client
- */
 void mqtt::setup() {
     log_d("MQTT setup");
     prefs.begin("mqtt", false);
@@ -29,19 +39,11 @@ void mqtt::setup() {
     client.setCallback(mainCallback);
 }
 
-/*!
- * @brief Sets the MQTT client ID
- * @param id the MQTT client ID
- */
 void mqtt::setClientID(const char *id) {
     clientID = id;
     log_i("MQTT client id set to %s", clientID);
 }
 
-/*!
- * @brief Sets the MQTT server host and saves it to non-volatile storage
- * @param server the MQTT server host
- */
 void mqtt::setServer(const char *server) {
     host = server;
     if (prefs.getString("host", "") == host) {
@@ -53,15 +55,10 @@ void mqtt::setServer(const char *server) {
     log_i("MQTT server set to %s", host.c_str());
 }
 
-/*!
- * @brief Sets the callback function to be called when a connection to the MQTT server is established
- * @param callback the callback function
- */
+
 void mqtt::setOnConnect(std::function<void()> callback) { onConnect = std::move(callback); }
 
-/*!
- * @brief Processes MQTT messages and maintains the connection
- */
+
 void mqtt::loop() {
     // Check MQTT connection and process messages
     if (!client.connected()) {
@@ -79,54 +76,55 @@ void mqtt::loop() {
 }
 
 
-/*!
- * @brief Constructor for a topic
- * @param topic The topic to subscribe to
- * @param callback The callback function to be called when a message is received
- */
-mqtt::Topic::Topic(const char *topic, Callback callback) : topic(topic) { callbacks[topic] = std::move(callback); }
-
-/*!
- * @brief Subscribes to the topic and registers the callback
- * @return true if successful, false otherwise
- */
-bool mqtt::Topic::subscribe() const {
-    const auto b = client.subscribe(topic);
-    if (!b) {
-        log_e("Failed to subscribe to topic '%s'", topic);
+const mqtt::Topic &mqtt::Topic::create(const char *topic, Callback callback) {
+    log_d("Creating topic: %s", topic);
+    auto [ref, ok] = topics.emplace(std::make_unique<TopicImpl>(topic, std::move(callback)));
+    if (!ok) {
+        log_w("Topic already exists: %s", topic);
     } else {
-        log_i("Subscribed to topic '%s'", topic);
+        log_i("Created topic: %s", topic);
     }
-    return b;
+    return **ref;
 }
 
-/*!
- * @brief Publishes a message to the topic
- * @param message the message to publish
- * @return true if successful, false otherwise
- */
-bool mqtt::Topic::publish(const char *message) const {
-    const auto b = client.publish(topic, message, true);
-    if (!b) {
-        log_e("Failed to publish to topic '%s'", topic);
-    } else {
-        log_i("Published '%s' to topic '%s'", message, topic);
+TopicImpl::TopicImpl(const char *topic, Callback callback): topic{topic}, callback{std::move(callback)} {}
+
+TopicImpl::~TopicImpl() {
+    if (auto res = std::erase_if(topics, [this](const auto &t) { return t.get() == this; }); res == 0) {
+        log_w("Topic not found in topics list");
     }
-    return b;
+}
+
+bool TopicImpl::subscribe() const {
+    auto res = client.subscribe(topic.c_str());
+    if (res)
+        log_i("Subscribed to topic '%s'", topic.c_str());
+    else
+        log_e("Failed to subscribe to topic '%s'", topic.c_str());
+    return res;
+}
+
+bool TopicImpl::publish(const char *message) const {
+    auto res = client.publish(topic.c_str(), message);
+    if (res)
+        log_i("Published message on topic '%s': %s", topic.c_str(), message);
+    else
+        log_e("Failed to publish message on topic '%s': %s", topic.c_str(), message);
+    return res;
 }
 
 
-//! Callback for MQTT messages; calls registered callback for the topic
 static void mainCallback(const char *topic, uint8_t *payload, unsigned int length) {
     log_d("Received message on topic '%s': %.*s", topic, length, payload);
-    if (const auto it = callbacks.find(topic); it != callbacks.end()) {
-        it->second(payload, length);
-    } else {
-        log_w("No callback registered for topic '%s'", topic);
+    for (const auto &t : topics) {
+        if (t->topic == topic) {
+            t->callback(payload, length);
+            return;
+        }
     }
+    log_w("No callback found for topic '%s'", topic);
 }
 
-//! try to connect to MQTT server
 static bool connect() {
     if (!WiFi.isConnected()) {
         log_w("WiFi not connected");
@@ -149,7 +147,6 @@ static bool connect() {
     return client.connected();
 }
 
-//! Log MQTT client state
 static void logState() {
     switch (client.state()) {
         case MQTT_CONNECTION_TIMEOUT:

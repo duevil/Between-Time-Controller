@@ -31,7 +31,7 @@ struct ColorInput {
         const Position position;
         Input::reference input;
         Colors::reference color;
-        explicit operator bool() const { return input & position; }
+        explicit operator bool() const { return input; }
 
     private:
         friend struct ColorInput;
@@ -44,9 +44,9 @@ struct ColorInput {
     Proxy operator&(Position position) { return Proxy{position, *this}; }
     bool operator==(const ColorInput &other) const = default;
 
-    void sync() {
+    void sync(Color on = "on") {
         for (auto i : POSITIONS) {
-            colors[i] = inputs.test(i) ? "on" : "off";
+            colors[i] = inputs.test(i) ? on : "off";
         }
     }
 

@@ -21,21 +21,22 @@ namespace values {
     constexpr inline auto &TC_0B01 = TIMECODES[TCI_0B01];
     constexpr inline auto &TC_0B10 = TIMECODES[TCI_0B10];
     constexpr inline auto &TC_0B11 = TIMECODES[TCI_0B11];
-    constexpr inline ColorInput::Position INPUT_FIELD_OPEN = ColorInput::IR;
+    constexpr inline ColorInput::Position INPUT_FIELD_OPEN_POS = ColorInput::IR;
+    constexpr inline ColorInput::Input INPUT_FIELD_OPENED = 1 << INPUT_FIELD_OPEN_POS;
     constexpr inline auto INPUT_CODE = "485361";
     constexpr static ColorInput::Colors CANDLES_COLORS = {
-        "yellow", "green", "black", "red", "cyan"
+        "blue", "black", "green", "magenta", "cyan"
     };
     constexpr static ColorInput::Position CANDLES_ORDER[] = {
         ColorInput::IR, ColorInput::OL, ColorInput::M, ColorInput::OR
     };
-    constexpr inline  ColorInput::Input BOOK_BINARY = 22;
+    constexpr inline ColorInput::Input BOOK_BINARY = 22;
     constexpr static Maze MAZE = {
         0x355519B3, 0x6935C2CA, 0xBA693C3C, 0xA3C6DAB,
         0x2CA393CA, 0x2D6CA658, 0xA3554D3C, 0xC65554D,
     };
     constexpr inline Maze::Position MAZE_START = {0, 0};
-    constexpr inline Maze::Position MAZE_END = {Maze::SIZE_X, Maze::SIZE_Y};
+    constexpr inline Maze::Position MAZE_END = {Maze::SIZE_X - 1, Maze::SIZE_Y - 1};
 }
 
 

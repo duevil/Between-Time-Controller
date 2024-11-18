@@ -1,7 +1,6 @@
 #ifndef GRAPHIC_DISPLAY_H
 #define GRAPHIC_DISPLAY_H
 
-#include <Maze.hpp>
 #include <Arduino.h>
 
 
@@ -14,7 +13,6 @@ namespace graphic_display {
 
     void setup();
     void clear();
-    void setCursor(uint8_t x, uint8_t y);
     void draw(const char *s, Type type);
 }
 

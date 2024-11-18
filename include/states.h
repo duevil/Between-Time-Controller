@@ -3,7 +3,6 @@
 
 #include "Maze.hpp"
 #include "ColorInput.hpp"
-#include <functional>
 
 
 namespace states {
@@ -32,6 +31,12 @@ namespace states {
         explicit operator Value() const { return value; }
     };
 
+    struct VisitedMaze {
+        virtual ~VisitedMaze() = default;
+        [[nodiscard]] virtual const char *string() const = 0;
+        virtual void operator+=(Maze::Position pos) = 0;
+    };
+
     template<Type type>
     using ValueType = std::conditional_t<
         type == Type::MAIN, MainValue, std::conditional_t<
@@ -41,24 +46,21 @@ namespace states {
                         type == Type::SCANNED_ITEMS, std::bitset<8>, void>>>>>;
 
     template<Type type>
-    struct StateValue {
+    struct State {
         using value_t = ValueType<type>;
-        using Callback = std::function<void(value_t)>;
-        StateValue() = default;
-        virtual ~StateValue() = 0;
-        void setCallback(const Callback &callback) { this->callback = callback; }
+        State() = default;
+        virtual ~State() = 0;
         const value_t &get() const { return this->value; }
+        const value_t &operator*() const { return get(); }
         const value_t *operator->() { return &this->value; }
 
         void set(const value_t &value) {
-            if (this->value != value) {
-                this->value = value;
-                if (callback) callback(this->value);
-                onChange(this->value);
-            }
+            if (this->value == value) return;
+            this->value = value;
+            onChange(this->value);
         }
 
-        StateValue &operator=(value_t value) {
+        State &operator=(value_t value) {
             set(value);
             return *this;
         }
@@ -67,24 +69,25 @@ namespace states {
         virtual void onChange(value_t &value) = 0;
 
     private:
-        Callback callback{};
         value_t value{};
     };
 
-    template<Type type> StateValue<type>::~StateValue() = default;
+    template<Type type> State<type>::~State() = default;
 
-    StateValue<Type::MAIN> &mainState();
-    StateValue<Type::TIMECODE> &timecode();
-    StateValue<Type::CANDLES> &candles();
-    StateValue<Type::MAZE_POSITION> &mazePosition();
-    StateValue<Type::SCANNED_ITEMS> &scannedItems();
 
-    using ColorCallback = std::function<void(const ColorInput::Colors &)>;
-    using DrawCallback = std::function<void(const char *)>;
-    void setColorCallback(ColorCallback callback);
-    void setDrawCallback(DrawCallback callback);
-    void setInput(const ColorInput::Input &input);
+    State<Type::MAIN> &mainState();
+    State<Type::TIMECODE> &timecode();
+    State<Type::CANDLES> &candles();
+    State<Type::MAZE_POSITION> &mazePosition();
+    State<Type::SCANNED_ITEMS> &scannedItems();
+
+    VisitedMaze &visitedMaze();
+
+    void subscribeToTopics();
     void reset();
+    void processInput(const ColorInput::Input &input);
+    template<Type type>
+    void onChange(const ValueType<type> &value);
 }
 
 
