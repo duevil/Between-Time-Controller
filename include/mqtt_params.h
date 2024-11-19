@@ -1,7 +1,6 @@
 #ifndef MQTT_PARAMS_H
 #define MQTT_PARAMS_H
 
-// TODO: implement MQTT config manager
 //! @brief Client ID
 //! @note Base64 encoding of 'between-time-controller' to ensure uniqueness for connecting to public MQTT brokers
 constexpr auto CLIENT_ID = "YmV0d2Vlbi10aW1lLWNvbnRyb2xsZXI";

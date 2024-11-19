@@ -8,7 +8,7 @@
 #include "encoder.h"
 #include "values.h"
 #include "states.h"
-#include <WiFi.h>
+#include "wifi_manager.h"
 
 
 // TODO: add comments
@@ -19,7 +19,7 @@ void setup() {
     Serial.println("Hello, ESP32!");
 
     graphic_display::setup();
-    draw("Booting...\nPlease wait...", graphic_display::Type::NORMAL);
+    draw("Booting...\nPlease wait.", graphic_display::Type::NORMAL);
     timecode_display::setup();
     timecode_display::set(0);
     leds::setup();
@@ -48,16 +48,11 @@ void setup() {
 
     mqtt::setup();
     mqtt::setClientID(CLIENT_ID);
-    mqtt::setServer(MQTT_SERVER);
     mqtt::setOnConnect(states::subscribeToTopics);
 
-    // TODO: replace with WiFi manager
-    WiFi.begin(WIFI_SSID, WIFI_PASS);
-    if (WiFi.waitForConnectResult() != WL_CONNECTED) {
-        log_e("WiFi Failed!");
-        while (!WiFi.isConnected()) delay(1000);
-    } else {
-        log_i("Connected to %s at %s", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
+    if (!wifi_manager::setup(mqtt::getServer(), mqtt::setServer)) {
+        graphic_display::clear();
+        draw("Waiting for WiFi...", graphic_display::Type::NORMAL);
     }
 }
 

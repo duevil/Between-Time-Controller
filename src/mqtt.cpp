@@ -55,6 +55,8 @@ void mqtt::setServer(const char *server) {
     log_i("MQTT server set to %s", host.c_str());
 }
 
+const char *mqtt::getServer() { return host.c_str(); }
+
 
 void mqtt::setOnConnect(std::function<void()> callback) { onConnect = std::move(callback); }
 

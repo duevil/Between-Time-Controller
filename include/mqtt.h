@@ -8,6 +8,7 @@ namespace mqtt {
     void setup();
     void setClientID(const char *);
     void setServer(const char *);
+    const char* getServer();
     void setOnConnect(std::function<void()>);
     void loop();
 
