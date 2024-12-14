@@ -64,4 +64,11 @@ void loop() {
     mqtt::loop();
     input::loop();
     encoder::loop();
+    using namespace states;
+    if (static auto tick = millis();
+        mainState()->value == MainValue::MAZE_SOLVED - 1 && input::get().any() && millis() - tick > 1000) {
+        tick = millis();
+        // reprocess the current input every second
+        processInput(input::get());
+    }
 }

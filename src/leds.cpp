@@ -10,6 +10,7 @@ void leds::setup() {
     log_d("LEDs setup");
     pixels.begin();
     set(ColorInput::all("off"));
+    pixels.setBrightness(15);
 }
 
 void leds::set(const ColorInput::Colors &colors) {
