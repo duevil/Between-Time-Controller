@@ -30,18 +30,18 @@ static Change changeAllowed() {
     switch (states::mainState()->value) {
         case STARTED:
         case INPUT_FIELD_OPENED:
-        case INPUT_FIELD_SOLVED:
             tcOK = timecode == values::TC_0B00;
             if (!tcOK)
                 log_d("Waiting for timecode: %d", values::TC_0B00);
             break;
+        case INPUT_FIELD_SOLVED:
         case CANDLES_PLACED:
         case CANDLES_SOLVED:
-        case BOOK_BINARY_SOLVED:
             tcOK = timecode == values::TC_0B01;
             if (!tcOK)
                 log_d("Waiting for timecode: %d", values::TC_0B01);
             break;
+        case BOOK_BINARY_SOLVED:
         case MAZE_ACTIVE:
         case MAZE_SOLVED:
             tcOK = timecode == values::TC_0B10;

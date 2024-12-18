@@ -1,4 +1,7 @@
 #include "states.h"
+
+#include <esp32-hal.h>
+
 #include "mqtt.h"
 #include "mqtt_params.h"
 #include "values.h"
@@ -92,6 +95,9 @@ template<Type type> void SV<type>::onReceive(const uint8_t *payload, unsigned in
 }
 
 template<Type type> void SV<type>::onChange(value_t &value) {
+    // prevent sending updates too frequently
+    if (static uint32_t last = 0; millis() - last > 200) last = millis();
+    else return;
     auto data = [&value] {
         if /**/ constexpr (type == MAIN) return value.value;
         else if constexpr (type == TIMECODE) return value;

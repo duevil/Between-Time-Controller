@@ -15,11 +15,11 @@ void encoder::setup() {
 #ifdef WOKWI
     ESP32Encoder::useInternalWeakPullResistors = puType::up;
     but.attach(PIN_SW, INPUT_PULLUP);
-    but.setPressedState(LOW);
+    but.setPressedState(HIGH);
 #else
     ESP32Encoder::useInternalWeakPullResistors = puType::none;
     but.attach(PIN_SW, INPUT);
-    but.setPressedState(HIGH);
+    but.setPressedState(LOW);
 #endif
     but.interval(5);
     enc.attachSingleEdge(PIN_DT, PIN_CLK);
@@ -52,6 +52,12 @@ void encoder::loop() {
         }
         encLast = enc.getCount();
         rotated = false;
+    }
+    // reset system when button is held for 10 seconds
+    if (but.isPressed() && but.currentDuration() > 10000) {
+        log_w("Encoder button long pressed triggered, resetting system");
+        delay(100);
+        ESP.restart();
     }
 }
 

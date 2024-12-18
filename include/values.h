@@ -32,8 +32,14 @@ namespace values {
     };
     constexpr inline ColorInput::Input BOOK_BINARY = 22;
     constexpr static Maze MAZE = {
-        0x355519B3, 0x6935C2CA, 0xBA693C3C, 0xA3C6DAB,
-        0x2CA393CA, 0x2D6CA658, 0xA3554D3C, 0xC65554D,
+        0x355519B3,
+        0x6935C2CA,
+        0xBA693C3C,
+        0xAA3C6DAB,
+        0x2CA393CA,
+        0x2D6CA658,
+        0xA3554D3C,
+        0xC655554D,
     };
     constexpr inline Maze::Position MAZE_START = {0, 0};
     constexpr inline Maze::Position MAZE_END = {Maze::SIZE_X - 1, Maze::SIZE_Y - 1};
