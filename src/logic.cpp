@@ -214,6 +214,7 @@ void states::onChange<states::Type::MAZE_POSITION>(const ValueType<Type::MAZE_PO
     log_i("Maze position changed to {%d, %d}", value.x, value.y);
     visitedMaze() += value;
     setDisplayAndLEDs();
+    blinker.once_ms(250, [] { leds::set(ColorInput::all("off")); });
     if (value != values::MAZE_END) return;
     mainState() = MainValue::MAZE_SOLVED;
 }

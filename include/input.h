@@ -24,6 +24,7 @@ namespace input {
     void loop();
     void setCallback(Callback callback);
     const ColorInput::Input &get();
+    void setTickEnabled(bool enabled);
 }
 
 
