@@ -50,7 +50,7 @@ namespace states {
         using value_t = ValueType<type>;
         State() = default;
         virtual ~State() = 0;
-        const value_t &get() const { return this->value; }
+        [[nodiscard]] const value_t &get() const { return this->value; }
         const value_t &operator*() const { return get(); }
         const value_t *operator->() { return &this->value; }
 

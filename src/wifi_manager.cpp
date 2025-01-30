@@ -14,6 +14,15 @@ static StaticTask_t task;
 static StackType_t stack[8192];
 #endif
 
+
+[[noreturn]] static void task_func(auto *) {
+    while (true) {
+        wiFiManager.process();
+        delay(1); // prevent watchdog reset
+    }
+}
+
+
 bool wifi_manager::setup(const char *mqttServer, const std::function<void(const char *)> &onMqttServerSet) {
 #ifdef WOKWI
     WiFi.begin(WIFI_SSID, WIFI_PASS);
@@ -34,7 +43,7 @@ bool wifi_manager::setup(const char *mqttServer, const std::function<void(const 
     wiFiManager.setMenu(menu, std::size(menu));
     wiFiManager.setDarkMode(true);
     wiFiManager.addParameter(&wm_mqtt_host);
-    wiFiManager.setConfigPortalBlocking(false); // don't wait for credentials input
+    wiFiManager.setConfigPortalBlocking(true); // wait for credentials input
     wiFiManager.setSaveParamsCallback([onMqttServerSet] { onMqttServerSet(wm_mqtt_host.getValue()); });
     log_d("Starting WiFiManager, waiting for connection...");
     auto configured = wiFiManager.autoConnect("BetweenTime Controller");
@@ -46,12 +55,7 @@ bool wifi_manager::setup(const char *mqttServer, const std::function<void(const 
     }
     wiFiManager.startWebPortal(); // start web portal to run in the background
     // we'll use a new task ("Thread") to process WiFiManager in the background
-    xTaskCreateStaticPinnedToCore([](auto *) {
-                                      while (true) {
-                                          wiFiManager.process();
-                                          delay(1); // prevent watchdog reset
-                                      }
-                                  },
+    xTaskCreateStaticPinnedToCore(task_func,
                                   "WiFiManager",
                                   std::size(stack),
                                   nullptr,
@@ -62,3 +66,5 @@ bool wifi_manager::setup(const char *mqttServer, const std::function<void(const 
     return configured;
 #endif
 }
+
+String wifi_manager::ip() { return WiFi.localIP().toString(); }

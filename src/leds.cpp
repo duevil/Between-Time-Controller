@@ -16,7 +16,7 @@ void leds::setup() {
 void leds::set(const ColorInput::Colors &colors) {
     for (auto i : ColorInput::POSITIONS) {
         log_v("Setting led at position [%d] to: %s", i, colors[i].toString());
-        pixels.setPixelColor(i, colors[i].value);
+        pixels.setPixelColor(ColorInput::SIZE - i - 1, colors[i].value);
     }
     pixels.show();
 }

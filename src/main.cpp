@@ -1,4 +1,3 @@
-#include "secrets.h"
 #include "mqtt_params.h"
 #include "mqtt.h"
 #include "leds.h"
@@ -10,8 +9,7 @@
 #include "states.h"
 #include "wifi_manager.h"
 
-
-// TODO: add comments
+#define nl "\n"
 
 
 void setup() {
@@ -19,7 +17,7 @@ void setup() {
     Serial.println("Hello, ESP32!");
 
     graphic_display::setup();
-    draw("Booting...\nPlease wait.", graphic_display::Type::NORMAL);
+    draw("Booting..." nl "Please wait.", graphic_display::Type::NORMAL);
     timecode_display::setup();
     timecode_display::set(0);
     leds::setup();
@@ -51,12 +49,24 @@ void setup() {
 
     mqtt::setup();
     mqtt::setClientID(CLIENT_ID);
-    mqtt::setOnConnect(states::subscribeToTopics);
-
-    if (!wifi_manager::setup(mqtt::getServer(), mqtt::setServer)) {
+    mqtt::setOnConnect([] {
         graphic_display::clear();
-        draw("Waiting for WiFi...", graphic_display::Type::NORMAL);
+        draw("Waiting for the game" nl "to start...", graphic_display::Type::NORMAL);
+        states::subscribeToTopics();
+    });
+
+    graphic_display::clear();
+    draw("Waiting for WiFi..." nl "Please set" nl "WiFi credentials" nl "using config portal.",
+         graphic_display::Type::NORMAL);
+
+    String text;
+    if (!wifi_manager::setup(mqtt::getServer(), mqtt::setServer)) {
+        text = "Error connecting" nl "to WiFi!";
+    } else {
+        text = "Waiting for" nl "MQTT connection..." nl nl + wifi_manager::ip();
     }
+    graphic_display::clear();
+    draw(text.c_str(), graphic_display::Type::NORMAL);
 }
 
 void loop() {

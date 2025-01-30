@@ -25,7 +25,7 @@ namespace values {
     constexpr inline ColorInput::Input INPUT_FIELD_OPENED = 1 << INPUT_FIELD_OPEN_POS;
     constexpr inline auto INPUT_CODE = "485361";
     constexpr static ColorInput::Colors CANDLES_COLORS = {
-        "blue", "black", "green", "magenta", "cyan"
+        "cyan", "magenta", "green", "black", "blue"
     };
     constexpr static ColorInput::Position CANDLES_ORDER[] = {
         ColorInput::IR, ColorInput::OL, ColorInput::M, ColorInput::OR

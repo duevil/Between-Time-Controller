@@ -7,7 +7,7 @@
 
 
 struct ColorInput {
-    enum Position : uint8_t { OL = 0, IL = 1, M = 2, IR = 3, OR = 4 };
+    enum Position : uint8_t { OL = 4, IL = 3, M = 2, IR = 1, OR = 0 };
 
     static constexpr auto SIZE = static_cast<std::underlying_type_t<Position>>(5);
     using Colors = std::array<Color, SIZE>;
@@ -16,7 +16,7 @@ struct ColorInput {
     class {
         using Array = std::array<Position, SIZE>;
         const Array positions = []<auto... I>(std::index_sequence<I...>) consteval {
-            return Array{static_cast<Position>(I)...};
+            return Array{static_cast<Position>(SIZE - I - 1)...};
         }(std::make_index_sequence<SIZE>{});
 
     public:

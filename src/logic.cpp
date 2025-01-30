@@ -95,6 +95,9 @@ static void setDisplayAndLEDs(states::MainValue::Value value = states::mainState
                     type = graphic_display::Type::CODE;
                     text = values::INPUT_CODE;
                     break;
+                case CANDLES_PLACED - 1:
+                    text = "Maybe look at the" nl "candles' bottoms...";
+                    break;
                 case CANDLES_SOLVED - 1:
                     colorInput.colors = values::CANDLES_COLORS;
                     break;
@@ -220,7 +223,7 @@ void states::onChange<states::Type::MAZE_POSITION>(const ValueType<Type::MAZE_PO
 }
 
 template<>
-void states::onChange<states::Type::SCANNED_ITEMS>(const ValueType<Type::SCANNED_ITEMS> &value) {
+void states::onChange<states::Type::SCANNED_ITEMS>(const ValueType<Type::SCANNED_ITEMS> &) {
     log_i("Scanned items changed to %s", value.to_string().c_str());
     log_e("Not implemented");
 }

@@ -7,7 +7,7 @@
 struct Color {
     template<typename T, class Base> requires std::is_same_v<T, Base> ||
                                               std::is_arithmetic_v<T> ||
-                                              std::is_same_v<T, const char*> ||
+                                              std::is_same_v<T, const char *> ||
                                               std::is_same_v<T, std::string_view>
     static constexpr bool is_color_value = true;
     long unsigned int value;
@@ -49,7 +49,7 @@ constexpr uint32_t Color::toColorT(T value) {
     };
     if constexpr (std::is_same_v<T, Color>) return value.value;
     if constexpr (std::is_arithmetic_v<T>) return static_cast<long unsigned int>(value);
-    if constexpr (std::is_same_v<T, const char*>) return fromString(value).value;
+    if constexpr (std::is_same_v<T, const char *>) return fromString(value).value;
     if constexpr (std::is_same_v<T, std::string_view>) return fromString(value.c_str()).value;
     return 0;
 }

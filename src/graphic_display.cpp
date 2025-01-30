@@ -34,13 +34,13 @@ const uint8_t maze_font[340] U8G2_FONT_SECTION("maze_font") =
 const uint8_t maze_crumbs[49] U8G2_FONT_SECTION("maze_crumbs") =
         "\3\0\2\3\3\3\3\3\5\7\7\0\0\0\0\0\0\0\0\0\0\0\30 \5\0\211\1!\10\244\215"
         "\223\216H\2\42\11v\213\243\216\307D\1\0\0\0";
-#endif/*
-    /*
-    Fontname: Mayan Symbols
-    Copyright: Created with Fony 1.4.7
-    Glyphs: 10/10
-    BBX Build Mode: 0
-    */
+#endif
+/*
+Fontname: Mayan Symbols
+Copyright: Created with Fony 1.4.7
+Glyphs: 10/10
+BBX Build Mode: 0
+*/
 const uint8_t mayan_symbols[618] U8G2_FONT_SECTION("mayan_symbols") =
         "\12\0\3\2\5\5\2\2\6\23\23\1\1\24\0\24\0\0\0\0\0\2Q\60\71s~\255\341\333\16."
         "\305AL\224\314\226\270*\246!\35\42q\70\352\300\16\350\300\16\350\300\16\210\312\42Z\26Q\261,\242"
