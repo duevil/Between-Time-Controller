@@ -1,7 +1,12 @@
 # Between Time Controller
 
-Firmware for the physical controller of the [Between Time](https://git.hs-harz.de/xrws24/xrws24/-/tree/BetweenTime)
-project.
+Firmware for the physical controller for Between Time, a small Coop-VR-Puzzle-Game made in Unity. In the game, two players need to solve puzzles within a tight time frame to extract all timecores, closing a time rift that threatens to collapse the whole of the time-space-continuum.
+
+While one player interacts in the virtuell world in VR, the second player uses this controller to assist him, needing both player to communicate and work together to solve all puzzles in time.
+
+The controller uses MQTT to send puzzle values, inputs and game states to Unity.
+
+![Between Time Controller](https://github.com/user-attachments/assets/21278b35-9b62-4610-ae9e-7c2f5607ace1)
 
 ## Instructions
 
@@ -61,9 +66,6 @@ reference to and knowledge of the other components and are only linked in the [m
 the [logic definition](src/logic.cpp), where the controller's main state machine is implemented.
 
 The puzzle values are hardcoded and can be found in the [values header](include/values.h).
-
-More about the MQTT states and the controller's logic can be
-found [here](https://nirafreedom.notion.site/R-tsellogik-afb0a2e07dd24c0fa885a09bc3be7e14).
 
 ## Simulation
 
